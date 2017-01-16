@@ -28,14 +28,14 @@ public class Main {
 	}
 	
 	public static void main(String[] args) {
-		if( args.length != 3 ) {
+		if( args.length != 4 ) {
 			System.out.println("usage: java -jar gsvannotation.jar [dbhost] [dbusername] [dbpassword] [dbport]");
 			return;
 		}
-		String dbhost = args[1];
-		String dbusername = args[2];
-		String dbpassword = args[3];
-		String dbport = args[4];
+		String dbhost = args[0];
+		String dbusername = args[1];
+		String dbpassword = args[2];
+		String dbport = args[3];
 		
 	    Sql2o sql2o = new Sql2o("jdbc:mysql://" + dbhost + ":" + dbport + "/invasivespecies", 
 	            dbusername, dbpassword);
@@ -62,6 +62,15 @@ public class Main {
 				return "pano did not exist";
 			}
 			
+		});
+		
+		get("/createPano", (request, response) -> {
+			String panoId = request.queryParams("panoId");
+			double lat = Double.parseDouble( request.queryParams("lat") );
+			double lng = Double.parseDouble( request.queryParams("lng") );
+			
+			model.insertPanorama(panoId,  lat,  lng);
+			return null;
 		});
 		
 		get("/getBoundingBoxes/:panoid", (request, response) -> {

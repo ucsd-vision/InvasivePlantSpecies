@@ -14,13 +14,14 @@ public class Sql2oModel implements Model {
 
 	@Override
 	public void insertPanorama(String panoId, double lat, double lng) {
-		try ( Connection conn = sql2o.beginTransaction()) {
-			conn.createQuery("insert into gsv_panorama ( panoId, lat, lng ) " + 
+		try ( Connection conn = sql2o.beginTransaction() ) {
+			conn.createQuery("insert into gsv_pano ( panoId, lat, lng ) " + 
 					" VALUES ( :panoId, :lat, :lng ) ")
 				.addParameter("panoId",  panoId)
 				.addParameter("lat",  lat)
 				.addParameter("lng",  lng)
 				.executeUpdate();
+			conn.commit();
 		}
 	}
 
