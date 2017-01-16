@@ -4,6 +4,12 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
 
+import org.sql2o.Sql2o;
+
+import gsvannotation.db.Model;
+import gsvannotation.db.Panorama;
+import gsvannotation.db.Sql2oModel;
+
 public class Main {
 	
 	public static String getPanoId(double lat, double lng) {
@@ -22,6 +28,19 @@ public class Main {
 	}
 	
 	public static void main(String[] args) {
+		if( args.length != 3 ) {
+			System.out.println("usage: java -jar gsvannotation.jar [dbhost] [dbusername] [dbpassword] [dbport]");
+			return;
+		}
+		String dbhost = args[1];
+		String dbusername = args[2];
+		String dbpassword = args[3];
+		String dbport = args[4];
+		
+	    Sql2o sql2o = new Sql2o("jdbc:mysql://" + dbhost + ":" + dbport + "/invasivespecies", 
+	            dbusername, dbpassword);
+
+		Model model = new Sql2oModel(sql2o);
 		staticFileLocation("/public");
 		get("/hello", (req, res) -> "Hello World");
 		
@@ -30,15 +49,15 @@ public class Main {
 			// assumes jar is run from a folder containing a panos subfolder
 			// checks if panoid panoarama image exists under panos subfolder
 			// if it doesn't exist, it downloads it using the python script
+			String panoId = request.queryParams("panoId");
+			Panorama pano = model.getPanorama(panoId);
 			
-			double lat = Double.parseDouble(request.queryParams("lat"));
-			double lng = Double.parseDouble(request.queryParams("lng"));
-			String panoId = getPanoId(lat, lng);
 			File panoImage = new File("panos/" + panoId + "_z4.jpg");
 			if( panoImage.exists() ) {
 				return "pano exists";
 			} else {
-				Process p = Runtime.getRuntime().exec("python src/main/python/getPanoImage.py " + lat + " " + lng);
+				Process p = Runtime.getRuntime().exec("python src/main/python/getPanoImage.py " + 
+						pano.getLat() + " " + pano.getLng());
 				p.waitFor();
 				return "pano did not exist";
 			}
