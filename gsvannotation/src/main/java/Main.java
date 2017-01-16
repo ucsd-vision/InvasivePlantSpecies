@@ -3,11 +3,15 @@ import static spark.Spark.*;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
+import java.util.List;
 
 import org.sql2o.Sql2o;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import gsvannotation.db.Model;
 import gsvannotation.db.Panorama;
+import gsvannotation.db.Species;
 import gsvannotation.db.Sql2oModel;
 
 public class Main {
@@ -41,6 +45,10 @@ public class Main {
 	            dbusername, dbpassword);
 
 		Model model = new Sql2oModel(sql2o);
+
+		// for converting POJOs to json
+		ObjectMapper jsonMapper = new ObjectMapper();
+		
 		staticFileLocation("/public");
 		get("/hello", (req, res) -> "Hello World");
 		
@@ -52,16 +60,14 @@ public class Main {
 			String panoId = request.queryParams("panoId");
 			Panorama pano = model.getPanorama(panoId);
 			
-			File panoImage = new File("panos/" + panoId + "_z4.jpg");
-			if( panoImage.exists() ) {
-				return "pano exists";
-			} else {
-				Process p = Runtime.getRuntime().exec("python src/main/python/getPanoImage.py " + 
-						pano.getLat() + " " + pano.getLng());
-				p.waitFor();
-				return "pano did not exist";
-			}
-			
+//			File panoImage = new File("panos/" + panoId + "_z4.jpg");
+//			if( !panoImage.exists() ) {
+//				Process p = Runtime.getRuntime().exec("python src/main/python/getPanoImage.py " + 
+//						pano.getLat() + " " + pano.getLng());
+//				p.waitFor();
+//			}
+			String panoJson = jsonMapper.writeValueAsString(pano);
+			return panoJson;
 		});
 		
 		get("/createPano", (request, response) -> {
@@ -84,7 +90,14 @@ public class Main {
 		});
 
 		get("/getAllPanos", (request, response) -> {
-			return null;
+			List<Panorama> panos = model.getAllPanos();
+			
+			return jsonMapper.writeValueAsString( panos );
+		});
+		
+		get("/getAllSpecies", (request, response) -> {
+			List<Species> species = model.getAllSpecies();
+			return jsonMapper.writeValueAsString( species );
 		});
 		
 		get("/latlng2pano", (request, response) -> {

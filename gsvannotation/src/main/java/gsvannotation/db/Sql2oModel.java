@@ -28,8 +28,11 @@ public class Sql2oModel implements Model {
 	@Override
 	public List<Panorama> getAllPanos() {
 		try( Connection conn = sql2o.open()) {
-			List<Panorama> panos = conn.createQuery("select * from gsv_panorama")
+			List<Panorama> panos = conn.createQuery("select * from gsv_pano")
 					.executeAndFetch(Panorama.class);
+			for( Panorama pano : panos ) {
+				pano.setBoundingBoxes( getPanoBoundingBoxes(pano.getPanoId()));
+			}
 			return panos;
 		}
 	}
@@ -46,8 +49,11 @@ public class Sql2oModel implements Model {
 	@Override
 	public List<BoundingBox> getPanoBoundingBoxes(String panoId) {
 		try( Connection conn = sql2o.open() ) {
-			List<BoundingBox> boundingBoxes = conn.createQuery("select * from bounding_box where gsv_pano_panoid = :panoid")
+			List<BoundingBox> boundingBoxes = conn.createQuery("select gsv_pano_panoid, species_id, topleftX, topleftY,  bottomrightX, bottomrightY " + 
+					" from bounding_box where gsv_pano_panoid = :panoid")
 					.addParameter("panoid",  panoId)
+					.addColumnMapping("gsv_pano_panoid", "panoId")
+					.addColumnMapping("species_id", "speciesId")
 					.executeAndFetch(BoundingBox.class);
 			return boundingBoxes;
 		}
@@ -59,8 +65,29 @@ public class Sql2oModel implements Model {
 			Panorama pano = conn.createQuery("select * from gsv_pano where panoId = :panoid")
 					.addParameter("panoid",  panoId)
 					.executeAndFetchFirst(Panorama.class);
+			if( pano != null ) {
+				pano.setBoundingBoxes(getPanoBoundingBoxes(pano.getPanoId()));
+			}
 			return pano;
 		}
+	}
+
+	@Override
+	public void addPanoBoundingBox(String panoId, int speciesId, int topLeftX, int topLeftY, int bottomRightX,
+			int bottomRightY) {
+		try ( Connection conn = sql2o.beginTransaction() ) {
+			conn.createQuery("insert into bounding_box ( gsv_pano_panoid, species_spid, topleftX, topleftY, bottomrightX, bottomrightY ) " + 
+					" VALUES ( :panoId, :speciesId, :tlX, :tlY, :brX, :brY ) ")
+				.addParameter("panoId",  panoId)
+				.addParameter("speciesId",  speciesId)
+				.addParameter("tlX",  topLeftX)
+				.addParameter("tlY",  topLeftY)
+				.addParameter("brX",  bottomRightX)
+				.addParameter("brY",  bottomRightY)
+				.executeUpdate();
+			conn.commit();
+		}
+		
 	}
 	
 }
