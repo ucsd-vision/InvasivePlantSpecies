@@ -1,10 +1,36 @@
 <html>
 <head>
-  <title>static index</title>
+  <title>Invasive species annotation tool</title>
 </head>
 
+<script type="text/javascript">
+var xobj = new XMLHttpRequest();
+xobj.overrideMimeType("application/json");
+xobj.onreadystatechange = function() {
+	if( this.readyState == 4 && this.status == 200 ) {
+		jsonPanos = JSON.parse(this.responseText);
+		jsonPanos.forEach( function( pano ) {
+			var li = document.createElement("li");
+			li.innerHTML = pano.panoId + " ("+pano.lat + ", " + pano.lng + ") " + pano.boundingBoxes.length + " bounding boxes - <a href='pano.html?panoId=" + pano.panoId + "'>edit</a>";
+			document.getElementById("existingPanos").append(li);
+		});
+		
+	}
+}
+xobj.open('GET', '/getAllPanos', true);
+xobj.send();
+</script>
 <body>
-hello world
+<div>
+<h2>Add GSV panorama for annotation</h2>
+Enter a Google Street View URL: <input type="text" id="gsvUrl" /><input type="button" id="gsvUrlGo" value="go" /><br />
+Enter a GPS coordinates Lat: <input type="text" id="gsvLat" /> Lng: <input type="text" id="gsvLng" /><input type="button" id="latlngGo" value="go" />
+</div>
+<div>
+<h2>Existing panos</h2>
+<ul id="existingPanos">
+</ul>
+</div>
 </body>
 </html>
 

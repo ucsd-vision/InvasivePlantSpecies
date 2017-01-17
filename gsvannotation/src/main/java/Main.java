@@ -49,10 +49,11 @@ public class Main {
 		// for converting POJOs to json
 		ObjectMapper jsonMapper = new ObjectMapper();
 		
-		staticFileLocation("/public");
-		get("/hello", (req, res) -> "Hello World");
+		externalStaticFileLocation("external");
 		
-		get("/getpano", (request, response) -> {
+		staticFileLocation("/public");
+		
+		get("/getPano", (request, response) -> {
 			
 			// assumes jar is run from a folder containing a panos subfolder
 			// checks if panoid panoarama image exists under panos subfolder
@@ -60,12 +61,12 @@ public class Main {
 			String panoId = request.queryParams("panoId");
 			Panorama pano = model.getPanorama(panoId);
 			
-//			File panoImage = new File("panos/" + panoId + "_z4.jpg");
-//			if( !panoImage.exists() ) {
-//				Process p = Runtime.getRuntime().exec("python src/main/python/getPanoImage.py " + 
-//						pano.getLat() + " " + pano.getLng());
-//				p.waitFor();
-//			}
+			File panoImage = new File("external/pano_images/" + panoId + "_z4.jpg");
+			if( !panoImage.exists() ) {
+				Process p = Runtime.getRuntime().exec("python src/main/python/getPanoImage.py " + 
+						pano.getLat() + " " + pano.getLng());
+				p.waitFor();
+			}
 			String panoJson = jsonMapper.writeValueAsString(pano);
 			return panoJson;
 		});

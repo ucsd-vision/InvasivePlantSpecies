@@ -1,0 +1,268 @@
+<html>
+<head>
+<title>Annotate panorama</title>
+</head>
+
+<body>
+<canvas id="canvPano" height="480" width="640"></canvas><br />
+<input type="button" id="buttonNone" onclick="defaultMode();" value="Select" />
+<input type="button" id="buttonPan" onclick="panningMode();" value="Pan"/>
+<input type="button" id="buttonBB" onclick="bbMode();" value="Add bounding box" />
+<input type="button" id="deleteBB" onclick="deleteBB();" value="Delete Selected" disabled="true" />
+<div id="divStatus" />
+<script type="text/javascript">
+// global (page scope) variables
+var canvas = document.getElementById('canvPano');
+var ctx = canvas.getContext('2d');
+var mouse = {x: 0, y: 0}; //make an object to hold mouse position
+var startCoords = {x: 0, y: 0};
+var last = {x: 0, y: 0};
+var panoOffset = {x: 0, y: 0};
+
+var mouseButtonDown = false; 
+
+var modesEnum = {"None": 0, "Pan":1, "BoundingBox":2}
+var mode = modesEnum.None;
+
+var boundingBoxes = [];
+
+var selectedBBIndex = -1;
+
+
+
+var img = new Image();
+img.src = "testpano.jpg";
+
+img.onload=function() {
+  render();
+};
+
+window.onload = function() {
+  updateDisplay();
+}
+
+function updateDisplay() {
+  switch( mode ) {
+    case modesEnum.None:
+      canvas.style.cursor="";
+      document.getElementById("divStatus").innerHTML="Select mode";
+      break;
+    case modesEnum.Pan:
+      canvas.style.cursor="move";
+      document.getElementById("divStatus").innerHTML="Panning mode";
+      break;
+    case modesEnum.BoundingBox: 
+      canvas.style.cursor="crosshair";
+      document.getElementById("divStatus").innerHTML="Add bounding box mode";
+      break;
+  }
+  
+  if( selectedBBIndex == -1 ) {
+    document.getElementById("deleteBB").disabled = true;
+  } else {
+    document.getElementById("deleteBB").disabled = false;
+  }
+  
+  render();
+}
+
+function deleteBB() {
+  if( selectedBBIndex != -1 ) {
+    boundingBoxes.splice(selectedBBIndex, 1);
+  }
+  
+  selectedBBIndex=-1;
+  updateDisplay();
+}
+
+function defaultMode() {
+  mode = modesEnum.None;
+  updateDisplay();
+}
+
+function panningMode() {
+  mode = modesEnum.Pan;
+  updateDisplay();
+}
+
+function bbMode() {
+  mode = modesEnum.BoundingBox;
+  updateDisplay();
+}
+
+function render() {
+  
+  ctx.drawImage(img, panoOffset.x, panoOffset.y);
+  
+  // wrap around image on the left
+  if( panoOffset.x > 0 ) {
+    ctx.drawImage(
+      img, 
+      img.width - panoOffset.x, // x coordinate where to start clipping
+      0, // y coordinate where to start clipping
+      panoOffset.x, // width
+      img.height, // height
+      0, // x coordinate where to place the image
+      panoOffset.y, // y coordinate where to place the image on the canvas
+      panoOffset.x, // width
+      img.height // height      
+    );
+  }
+  
+  // wrap around image on the right
+  if( panoOffset.x < -(img.width-canvas.width) ) {
+    ctx.drawImage(
+      img,
+      0, // x coordinate where to start clipping
+      0, //y coordinate where to start clipping
+      -(img.width - canvas.width + panoOffset.x), // width
+      img.height, // height
+      canvas.width + (img.width - canvas.width+panoOffset.x), // x coordinate where to place the image
+      panoOffset.y, // y coordinate where to place the image
+      -(img.width - canvas.width + panoOffset.x), // width
+      img.height // height
+    );
+  }
+  
+  drawBoundingBoxes();
+}
+
+function drawCrosshairs(x, y) {
+  ctx.strokeStyle="#FF0000"
+  ctx.beginPath();
+  ctx.moveTo(0, panoOffset.y+y);
+  ctx.lineTo(img.width, panoOffset.y+y);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(panoOffset.x+x, 0);
+  ctx.lineTo(panoOffset.x+x, img.height);
+  ctx.stroke();
+}
+
+function drawRectangle( start, end, style, width ) {
+  ctx.strokeStyle=style;
+  ctx.lineWidth = width;
+  ctx.strokeRect(start.x+panoOffset.x, start.y+panoOffset.y, 
+  end.x-start.x, end.y-start.y);
+}
+
+canvas.onmousemove = function (e) {
+  'use strict';
+  var xVal = e.pageX - this.offsetLeft,
+  yVal = e.pageY - this.offsetTop;
+  mouse = {x: e.pageX,
+  y: e.pageY};
+
+  if( mode == modesEnum.Pan ) {
+    if (mouseButtonDown) {
+      panoOffset.x = xVal - startCoords.x;
+      panoOffset.y = yVal - startCoords.y;
+      if( panoOffset.x < -(img.width*2 - canvas.width) ) {
+        panoOffset.x += img.width;
+      }
+      console.debug("x: " + panoOffset.x + " y: " + panoOffset.y  );
+      updateDisplay();
+    }
+  } else if( mode == modesEnum.BoundingBox ) {
+    updateDisplay();
+    if( mouseButtonDown) {
+      var endCoords = { x: xVal - last.x, y: yVal -last.y};
+      drawRectangle(startCoords, endCoords, "#FF0000");
+    } else {
+      drawCrosshairs(xVal-last.x, yVal-last.y);
+    }
+  }
+};
+
+function drawBoundingBoxes() {
+  for( var i = 0; i < boundingBoxes.length; ++i ) {
+    var style = "#00FF00";
+    var width = 1;
+    if( selectedBBIndex == i ) {
+      style = "#FF0000";
+      width = 5;
+    }
+    drawRectangle(boundingBoxes[i].start, boundingBoxes[i].end, style, width);
+  }
+}
+
+function findBoundingBox(x,y) {
+  x -= panoOffset.x;
+  y -= panoOffset.y;
+  selectedBBIndex=-1;
+  for( var i = 0; i < boundingBoxes.length; ++i ) {
+    var bb = boundingBoxes[i];
+    if( x >= bb.start.x && x <= bb.end.x && y >= bb.start.y && y <= bb.end.y ) {
+      selectedBBIndex = i;
+      break;
+    }
+  }
+  
+  updateDisplay();
+  
+}
+
+canvas.onmousedown = function (e) {
+  'use strict';
+  var xVal = e.pageX - this.offsetLeft;
+  var yVal = e.pageY - this.offsetTop;
+
+  mouse = {x: e.pageX,
+  y: e.pageY};
+  
+  switch( mode ) {
+    case modesEnum.None:
+      findBoundingBox(xVal, yVal);
+      break;
+    case modesEnum.Pan:
+    
+      break;
+      
+    case modesEnum.BoundingBox:
+      break;
+      
+  }
+  
+  
+  mouseButtonDown = true;
+  startCoords = {
+    x: e.pageX - this.offsetLeft - last.x,
+    y: e.pageY - this.offsetTop - last.y
+  };
+};
+
+function addBoundingBox(bbStart, bbEnd) {
+  // in case bounding box was not drawn from top left to bottom right
+  var startX = Math.min(bbStart.x, bbEnd.x);
+  var endX = Math.max(bbStart.x, bbEnd.x);
+  var startY = Math.min(bbStart.y, bbEnd.y);
+  var endY = Math.max(bbStart.y, bbEnd.y);
+  
+  var newbb = { start: {x: startX, y: startY}, end: {x: endX, y: endY} };
+  boundingBoxes.push(newbb);
+}
+
+canvas.onmouseup   = function (e) {
+  'use strict';
+  mouseButtonDown = false;
+  
+  switch( mode ) {
+  case modesEnum.None:
+    break;
+  case modesEnum.Pan:
+    last = {
+      x: e.pageX - this.offsetLeft - startCoords.x,
+      y: e.pageY - this.offsetTop - startCoords.y
+    };
+    break;
+  case modesEnum.BoundingBox:
+    var endCoords = { x: e.pageX - this.offsetLeft - last.x, y: e.pageY - this.offsetTop - last.y };
+    addBoundingBox( startCoords, endCoords );
+    defaultMode();
+    break;
+  }
+};
+</script>
+</body>
+</html>
