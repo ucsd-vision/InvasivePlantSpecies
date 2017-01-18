@@ -13,7 +13,7 @@ select {
 </head>
 
 <body>
-<canvas id="canvPano" height="480" width="640"></canvas><br />
+<canvas id="canvPano" height="768" width="1024"></canvas><br />
 <input type="button" id="buttonNone" onclick="defaultMode();" value="Select" />
 <input type="button" id="buttonPan" onclick="panningMode();" value="Pan"/>
 <input type="button" id="buttonBB" onclick="bbMode();" value="Add bounding box" />
@@ -72,7 +72,7 @@ xobj.onreadystatechange = function() {
 	if( this.readyState == 4 && this.status == 200 ) {
 		statusDiv.innerHTML="";
 		panoObj = JSON.parse(this.responseText);
-		img.src = "pano_images/"+urlParams.panoId+"_z2.jpg";
+		img.src = "pano_images/"+urlParams.panoId+"_z3.jpg";
 		updateDisplay();
 	}
 }

@@ -19,12 +19,35 @@ xobj.onreadystatechange = function() {
 }
 xobj.open('GET', '/getAllPanos', true);
 xobj.send();
+
+function latlng2pano() {
+	var btn = document.getElementById("latlngGo");
+	var statusSpan = document.getElementById("latlngStatus");
+	statusSpan.innerHTML="Creating...";
+	var lat = document.getElementById("gsvLat").value;
+	var lng = document.getElementById("gsvLng").value;
+	
+	var xobj = new XMLHttpRequest();
+	xobj.onreadystatechange = function() {
+		if( this.readyState == 4 && this.status == 200 ) {
+			if( this.responseText != "" ) {
+				var panoId = this.responseText;
+				window.location.assign("pano.html?panoId=" + panoId );
+			} else {
+				btn.disabled=false;
+				span.innerHTML = "Failed to create pano with current lat/lng coordinates";
+			}
+		}
+	};
+	xobj.open('GET', '/latlng2pano?lat='+lat+'&lng='+lng, true);
+	xobj.send();
+}
 </script>
 <body>
 <div>
 <h2>Add GSV panorama for annotation</h2>
 Enter a Google Street View URL: <input type="text" id="gsvUrl" /><input type="button" id="gsvUrlGo" value="go" /><br />
-Enter a GPS coordinates Lat: <input type="text" id="gsvLat" /> Lng: <input type="text" id="gsvLng" /><input type="button" id="latlngGo" value="go" />
+Enter a GPS coordinates Lat: <input type="text" id="gsvLat" width="8" /> Lng: <input type="text" id="gsvLng" width="8"/><input type="button" id="latlngGo" value="go" onclick="latlng2pano()" /><span id="latlngStatus"></span>
 </div>
 <div>
 <h2>Existing panos</h2>

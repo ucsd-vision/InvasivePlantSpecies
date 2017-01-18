@@ -24,6 +24,9 @@ public class Main {
 			BufferedReader stdInput = new BufferedReader( new InputStreamReader( p.getInputStream() ));
 			
 			String panoId = stdInput.readLine();
+			if(panoId.contains("Traceback")) {
+				panoId = "";
+			}
 			return panoId;
 		} catch( Exception e ) {
 			e.printStackTrace();
@@ -61,7 +64,7 @@ public class Main {
 			String panoId = request.queryParams("panoId");
 			Panorama pano = model.getPanorama(panoId);
 			
-			File panoImage = new File("external/pano_images/" + panoId + "_z2.jpg");
+			File panoImage = new File("external/pano_images/" + panoId + "_z3.jpg");
 			if( !panoImage.exists() ) {
 				Process p = Runtime.getRuntime().exec("python src/main/python/getPanoImage.py " + 
 						pano.getLat() + " " + pano.getLng());
@@ -108,6 +111,12 @@ public class Main {
 			double lat = Double.parseDouble(request.queryParams("lat"));
 			double lng = Double.parseDouble(request.queryParams("lng"));
 			String panoId = getPanoId(lat,  lng);
+			if( panoId != "" ) {
+				Panorama pano = model.getPanorama(panoId);
+				if( pano == null ) {
+					model.insertPanorama(panoId,  lat,  lng);
+				}
+			}
 			return panoId;
 		});
 	}

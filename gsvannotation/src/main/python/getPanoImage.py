@@ -6,4 +6,4 @@ lat = sys.argv[1];
 lng = sys.argv[2];
 
 pano = get_nearest_pano(lat, lng)
-download_full_pano_image( pano, 2, None, 'javascript', 'external/pano_images')
+download_full_pano_image( pano, 3, None, 'javascript', 'external/pano_images')
