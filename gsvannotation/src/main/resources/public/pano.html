@@ -8,9 +8,55 @@
 <input type="button" id="buttonNone" onclick="defaultMode();" value="Select" />
 <input type="button" id="buttonPan" onclick="panningMode();" value="Pan"/>
 <input type="button" id="buttonBB" onclick="bbMode();" value="Add bounding box" />
-<input type="button" id="deleteBB" onclick="deleteBB();" value="Delete Selected" disabled="true" />
-<div id="divStatus" />
+<input type="button" id="deleteBB" onclick="deleteBB();" value="Delete Selected" disabled="True" />
+<div id="divStatus">
+</div>
+<div>
+<h3>Bounding boxes</h3>
+<div id="divBoundingBoxes"></div>
+</div>
+<div>
+<input type="button" value="Save" onclick="save()" />
+</div>
 <script type="text/javascript">
+
+// parse querystring
+var urlParams;
+(window.onpopstate = function () {
+    var match,
+        pl     = /\+/g,  // Regex for replacing addition symbol with a space
+        search = /([^&=]+)=?([^&]*)/g,
+        decode = function (s) { return decodeURIComponent(s.replace(pl, " ")); },
+        query  = window.location.search.substring(1);
+
+    urlParams = {};
+    while (match = search.exec(query))
+       urlParams[decode(match[1])] = decode(match[2]);
+})();
+
+
+var statusDiv = document.getElementById("divStatus");
+// ajax call to get pano information
+statusDiv.innerHTML="checking for panorama image, please wait...";
+
+var img = new Image();
+img.onload=function() {
+	  render();
+	};
+	
+var xobj = new XMLHttpRequest();
+xobj.overrideMimeType("application/json");
+xobj.onreadystatechange = function() {
+	if( this.readyState == 4 && this.status == 200 ) {
+		statusDiv.innerHTML="";
+		img.src = "pano_images/"+urlParams.panoId+"_z3.jpg";
+		updateDisplay();
+	}
+}
+xobj.open('GET', '/getPano?panoId='+urlParams.panoId, true);
+xobj.send();
+
+
 // global (page scope) variables
 var canvas = document.getElementById('canvPano');
 var ctx = canvas.getContext('2d');
@@ -30,16 +76,9 @@ var selectedBBIndex = -1;
 
 
 
-var img = new Image();
-img.src = "testpano.jpg";
 
-img.onload=function() {
-  render();
-};
 
-window.onload = function() {
-  updateDisplay();
-}
+
 
 function updateDisplay() {
   switch( mode ) {
@@ -241,6 +280,17 @@ function addBoundingBox(bbStart, bbEnd) {
   
   var newbb = { start: {x: startX, y: startY}, end: {x: endX, y: endY} };
   boundingBoxes.push(newbb);
+  
+  // add bounding box to page
+  var bbdiv = document.getElementById("divBoundingBoxes");
+  
+  var newdiv = document.createElement("div");
+  
+  var newimg = document.createElement("canvas");
+  newimg.width = endX-startX;
+  newimg.height = endY-startY;
+  newimg.
+  
 }
 
 canvas.onmouseup   = function (e) {
@@ -263,6 +313,10 @@ canvas.onmouseup   = function (e) {
     break;
   }
 };
+
+function save() {
+	json
+}
 </script>
 </body>
 </html>
