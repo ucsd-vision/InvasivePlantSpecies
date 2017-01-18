@@ -49,10 +49,9 @@ public class Sql2oModel implements Model {
 	@Override
 	public List<BoundingBox> getPanoBoundingBoxes(String panoId) {
 		try( Connection conn = sql2o.open() ) {
-			List<BoundingBox> boundingBoxes = conn.createQuery("select gsv_pano_panoid, species_id, topleftX, topleftY,  bottomrightX, bottomrightY " + 
+			List<BoundingBox> boundingBoxes = conn.createQuery("select species_id, topleftX, topleftY,  bottomrightX, bottomrightY " + 
 					" from bounding_box where gsv_pano_panoid = :panoid")
 					.addParameter("panoid",  panoId)
-					.addColumnMapping("gsv_pano_panoid", "panoId")
 					.addColumnMapping("species_id", "speciesId")
 					.executeAndFetch(BoundingBox.class);
 			return boundingBoxes;
@@ -73,18 +72,22 @@ public class Sql2oModel implements Model {
 	}
 
 	@Override
-	public void addPanoBoundingBox(String panoId, int speciesId, int topLeftX, int topLeftY, int bottomRightX,
-			int bottomRightY) {
+	public void updatePanorama(Panorama pano) {
 		try ( Connection conn = sql2o.beginTransaction() ) {
-			conn.createQuery("insert into bounding_box ( gsv_pano_panoid, species_spid, topleftX, topleftY, bottomrightX, bottomrightY ) " + 
-					" VALUES ( :panoId, :speciesId, :tlX, :tlY, :brX, :brY ) ")
-				.addParameter("panoId",  panoId)
-				.addParameter("speciesId",  speciesId)
-				.addParameter("tlX",  topLeftX)
-				.addParameter("tlY",  topLeftY)
-				.addParameter("brX",  bottomRightX)
-				.addParameter("brY",  bottomRightY)
+			conn.createQuery("delete from bounding_box where gsv_pano_panoid = :panoId")
+				.addParameter("panoId",  pano.getPanoId())
 				.executeUpdate();
+			for( BoundingBox bb : pano.getBoundingBoxes() ) {
+				conn.createQuery("insert into bounding_box ( gsv_pano_panoid, species_id, topleftX, topleftY, bottomrightX, bottomrightY ) " + 
+						" VALUES ( :panoId, :speciesId, :tlX, :tlY, :brX, :brY ) ")
+					.addParameter("panoId",  pano.getPanoId())
+					.addParameter("speciesId",  bb.getSpeciesId())
+					.addParameter("tlX",  bb.getTopLeftX())
+					.addParameter("tlY",  bb.getTopLeftY())
+					.addParameter("brX",  bb.getBottomRightX())
+					.addParameter("brY",  bb.getBottomRightY())
+					.executeUpdate();
+			}
 			conn.commit();
 		}
 		

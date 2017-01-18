@@ -5,9 +5,7 @@ import java.util.List;
 public interface Model {
 	void insertPanorama(String panoId, double lat, double lng);
 	
-	void addPanoBoundingBox(String panoId, int speciesId, 
-			int topLeftX, int topLeftY, 
-			int bottomRightX, int bottomRightY);
+	void updatePanorama(Panorama pano);
 	
 	List<Panorama> getAllPanos();
 

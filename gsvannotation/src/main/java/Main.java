@@ -61,7 +61,7 @@ public class Main {
 			String panoId = request.queryParams("panoId");
 			Panorama pano = model.getPanorama(panoId);
 			
-			File panoImage = new File("external/pano_images/" + panoId + "_z3.jpg");
+			File panoImage = new File("external/pano_images/" + panoId + "_z2.jpg");
 			if( !panoImage.exists() ) {
 				Process p = Runtime.getRuntime().exec("python src/main/python/getPanoImage.py " + 
 						pano.getLat() + " " + pano.getLng());
@@ -85,9 +85,12 @@ public class Main {
 			return null;
 		});
 		
-		post("/saveBoundingBox", (request, response) -> {
-		
-			return null;
+		post("/savePano", (request, response) -> {
+			String body = request.body();
+			Panorama pano = jsonMapper.readValue(body,  Panorama.class);
+			model.updatePanorama( pano );
+			response.status(200);
+			return "ok";
 		});
 
 		get("/getAllPanos", (request, response) -> {

@@ -1,20 +1,11 @@
 package gsvannotation.db;
 
 public class BoundingBox {
-	private String panoId;
 	private int speciesId;
 	private int topLeftX;
 	private int topLeftY;
 	private int bottomRightX;
 	private int bottomRightY;
-
-	public String getPanoId() {
-		return panoId;
-	}
-
-	public void setPanoId(String panoId) {
-		this.panoId = panoId;
-	}
 
 	public int getSpeciesId() {
 		return speciesId;

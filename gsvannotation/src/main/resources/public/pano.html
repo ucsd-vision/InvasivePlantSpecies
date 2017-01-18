@@ -1,6 +1,15 @@
 <html>
 <head>
 <title>Annotate panorama</title>
+<style>
+div {
+	margin: 5px;
+}
+
+select {
+	vertical-align: top;
+}
+</style>
 </head>
 
 <body>
@@ -16,7 +25,7 @@
 <div id="divBoundingBoxes"></div>
 </div>
 <div>
-<input type="button" value="Save" onclick="save()" />
+<input type="button" value="Save" onclick="save()" id="btnSave" />
 </div>
 <script type="text/javascript">
 
@@ -40,21 +49,36 @@ var statusDiv = document.getElementById("divStatus");
 statusDiv.innerHTML="checking for panorama image, please wait...";
 
 var img = new Image();
+var panoObj;
 img.onload=function() {
-	  render();
-	};
+	panoObj.boundingBoxes.forEach( function ( bb ) {
+		var start = {x: bb.topLeftX, y: bb.topLeftY};
+		var end = {x:bb.bottomRightX, y: bb.bottomRightY};
+		addBoundingBox(start, end, bb.speciesId);
+	});
+	render();
+};
 	
+//another ajax call to get all species
+var speciesJson;
+var xobjSpecies = new XMLHttpRequest();
+xobjSpecies.open('GET', '/getAllSpecies', false); //synchronous call
+xobjSpecies.send();
+speciesJson = JSON.parse(xobjSpecies.responseText);
+
 var xobj = new XMLHttpRequest();
 xobj.overrideMimeType("application/json");
 xobj.onreadystatechange = function() {
 	if( this.readyState == 4 && this.status == 200 ) {
 		statusDiv.innerHTML="";
-		img.src = "pano_images/"+urlParams.panoId+"_z3.jpg";
+		panoObj = JSON.parse(this.responseText);
+		img.src = "pano_images/"+urlParams.panoId+"_z2.jpg";
 		updateDisplay();
 	}
 }
 xobj.open('GET', '/getPano?panoId='+urlParams.panoId, true);
 xobj.send();
+
 
 
 // global (page scope) variables
@@ -73,11 +97,6 @@ var mode = modesEnum.None;
 var boundingBoxes = [];
 
 var selectedBBIndex = -1;
-
-
-
-
-
 
 
 function updateDisplay() {
@@ -109,7 +128,9 @@ function deleteBB() {
   if( selectedBBIndex != -1 ) {
     boundingBoxes.splice(selectedBBIndex, 1);
   }
-  
+  document.getElementById("divBoundingBoxes")
+  	.removeChild(document.getElementById("divBB"+selectedBBIndex));
+
   selectedBBIndex=-1;
   updateDisplay();
 }
@@ -200,7 +221,7 @@ canvas.onmousemove = function (e) {
       if( panoOffset.x < -(img.width*2 - canvas.width) ) {
         panoOffset.x += img.width;
       }
-      console.debug("x: " + panoOffset.x + " y: " + panoOffset.y  );
+      //console.debug("x: " + panoOffset.x + " y: " + panoOffset.y  );
       updateDisplay();
     }
   } else if( mode == modesEnum.BoundingBox ) {
@@ -271,26 +292,54 @@ canvas.onmousedown = function (e) {
   };
 };
 
-function addBoundingBox(bbStart, bbEnd) {
+function addBoundingBox(bbStart, bbEnd, speciesId) {
+	var bbid = boundingBoxes.length;	
   // in case bounding box was not drawn from top left to bottom right
   var startX = Math.min(bbStart.x, bbEnd.x);
   var endX = Math.max(bbStart.x, bbEnd.x);
   var startY = Math.min(bbStart.y, bbEnd.y);
   var endY = Math.max(bbStart.y, bbEnd.y);
   
-  var newbb = { start: {x: startX, y: startY}, end: {x: endX, y: endY} };
-  boundingBoxes.push(newbb);
+  var newbb = { index: bbid, start: {x: startX, y: startY}, end: {x: endX, y: endY} };
   
   // add bounding box to page
   var bbdiv = document.getElementById("divBoundingBoxes");
   
   var newdiv = document.createElement("div");
+  newdiv.id="divBB"+bbid;
   
+  // display bounding box image
   var newimg = document.createElement("canvas");
   newimg.width = endX-startX;
   newimg.height = endY-startY;
-  newimg.
-  
+  var newctx = newimg.getContext('2d');
+  newctx.drawImage(img, 
+		  startX, // where to start clipping
+		  startY, // where to start clipping
+		  endX-startX, // width
+		  endY-startY, // height
+		  0, // where to place image on canvas
+		  0, // where to place image on canvas
+		  endX-startX, // width 
+		  endY-startY); // height
+	newdiv.append(newimg);
+  	
+  	var speciesDropdown = document.createElement("select");
+	speciesJson.forEach( function( species ) {
+		var opt = document.createElement("option");
+		opt.value = species.id;
+		opt.text = species.description;
+		if( opt.value == speciesId ) {
+			opt.selected=true;
+		}
+		speciesDropdown.options.add(opt);
+	});
+	speciesDropdown.id = "bbSpecies"+boundingBoxes.length;
+	newdiv.append(speciesDropdown);
+
+	bbdiv.append(newdiv);
+	boundingBoxes.push(newbb);
+
 }
 
 canvas.onmouseup   = function (e) {
@@ -315,7 +364,29 @@ canvas.onmouseup   = function (e) {
 };
 
 function save() {
-	json
+	var saveButton = document.getElementById("btnSave");
+	saveButton.disabled=true;
+	saveButton.value="Saving...";
+	// put in format back end will understand
+	var pano = {panoId:urlParams.panoId, lat:0, lng:0, image:"", boundingBoxes:[]};
+	boundingBoxes.forEach( function(bb, index) { 
+		var newbb = {topLeftX: bb.start.x, topLeftY: bb.start.y,
+				bottomRightX:bb.end.x, bottomRightY: bb.end.y};
+		newbb.speciesId = document.getElementById("bbSpecies"+bb.index).value;
+		pano.boundingBoxes.push(newbb);
+	});
+	
+	json = JSON.stringify(pano);
+	var xobj = new XMLHttpRequest();
+	xobj.open('POST', '/savePano');
+	xobj.setRequestHeader("Content-Type", "application/json");
+	xobj.onreadystatechange = function() {
+		if( this.readyState == 4 && this.status == 200 ) {
+			saveButton.value="Done";
+			window.location.assign("/index.html");
+		}
+	}
+	xobj.send(json);
 }
 </script>
 </body>
