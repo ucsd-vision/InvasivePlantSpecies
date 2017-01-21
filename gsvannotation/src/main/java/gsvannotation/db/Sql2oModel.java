@@ -1,9 +1,9 @@
 package gsvannotation.db;
 
-import java.util.List;
-
 import org.sql2o.Connection;
 import org.sql2o.Sql2o;
+
+import java.util.List;
 
 public class Sql2oModel implements Model {
 	private Sql2o sql2o;
@@ -92,5 +92,16 @@ public class Sql2oModel implements Model {
 		}
 		
 	}
-	
+
+	@Override
+	public void updateSpecies(Species species) {
+		try ( Connection conn = sql2o.beginTransaction() ) {
+			conn.createQuery("update species set description = :description where id = :id")
+					.addParameter("description", species.getDescription())
+					.addParameter("id", species.getId())
+					.executeUpdate();
+			conn.commit();
+		}
+	}
+
 }

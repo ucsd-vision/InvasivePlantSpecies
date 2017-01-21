@@ -1,18 +1,16 @@
-import static spark.Spark.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import gsvannotation.db.Model;
+import gsvannotation.db.Panorama;
+import gsvannotation.db.Species;
+import gsvannotation.db.Sql2oModel;
+import org.sql2o.Sql2o;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
 import java.util.List;
 
-import org.sql2o.Sql2o;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import gsvannotation.db.Model;
-import gsvannotation.db.Panorama;
-import gsvannotation.db.Species;
-import gsvannotation.db.Sql2oModel;
+import static spark.Spark.*;
 
 public class Main {
 	
@@ -73,7 +71,24 @@ public class Main {
 			String panoJson = jsonMapper.writeValueAsString(pano);
 			return panoJson;
 		});
-		
+
+		get("/getSpecies", (request, response) -> {
+			String idString = request.queryParams("speciesId");
+			int id = Integer.parseInt(idString);
+
+			List<Species> species = model.getAllSpecies();
+
+			Species specie = null;
+			for (Species s :
+					species) {
+				if (s.getId() == id) {
+					specie = s;
+				}
+			}
+
+			return jsonMapper.writeValueAsString( specie );
+		});
+
 		get("/createPano", (request, response) -> {
 			String panoId = request.queryParams("panoId");
 			double lat = Double.parseDouble( request.queryParams("lat") );
@@ -92,6 +107,14 @@ public class Main {
 			String body = request.body();
 			Panorama pano = jsonMapper.readValue(body,  Panorama.class);
 			model.updatePanorama( pano );
+			response.status(200);
+			return "ok";
+		});
+
+		post("/saveSpecies", (request, response) -> {
+			String body = request.body();
+			Species species = jsonMapper.readValue(body,  Species.class);
+			model.updateSpecies(species); //Method that should exist but doesn't
 			response.status(200);
 			return "ok";
 		});

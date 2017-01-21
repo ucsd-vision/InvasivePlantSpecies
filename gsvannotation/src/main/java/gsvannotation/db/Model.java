@@ -6,6 +6,8 @@ public interface Model {
 	void insertPanorama(String panoId, double lat, double lng);
 	
 	void updatePanorama(Panorama pano);
+
+	void updateSpecies(Species species);
 	
 	List<Panorama> getAllPanos();
 

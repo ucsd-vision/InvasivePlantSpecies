@@ -1,0 +1,44 @@
+<html>
+<head>
+<title>All Species</title>
+</head>
+
+
+<body>
+	<div>
+
+
+		<script type="text/javascript">
+			var xobj = new XMLHttpRequest();
+			xobj.overrideMimeType("application/json");
+			xobj.onreadystatechange = function() {
+				if (this.readyState == 4 && this.status == 200) {
+					jsonSpecies = JSON.parse(this.responseText);
+					jsonSpecies.forEach(function(species) {
+						var newrow = document.createElement("tr")
+						newrow.innerHTML = "<td>" + species.description
+								+ "</td><td><a href='editSpecies.html?id="
+								+ species.id + "'>edit</a></td>";
+
+						document.getElementById("bbtable").append(newrow);
+					});
+
+				}
+			}
+			xobj.open('GET', '/getAllSpecies', true);
+			xobj.send();
+		</script>
+
+
+
+		<table id="bbtable" border="1" cellspacing=0 cellpadding=0>
+			<tr>
+				<th>Species</th>
+			<tbody>
+			</tbody>
+		</table>
+
+	</div>
+</body>
+
+</html>
