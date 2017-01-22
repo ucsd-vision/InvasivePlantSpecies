@@ -114,7 +114,7 @@ public class Main {
 		post("/saveSpecies", (request, response) -> {
 			String body = request.body();
 			Species species = jsonMapper.readValue(body,  Species.class);
-			model.updateSpecies(species); //Method that should exist but doesn't
+			model.updateSpecies(species);
 			response.status(200);
 			return "ok";
 		});

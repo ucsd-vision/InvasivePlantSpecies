@@ -95,12 +95,21 @@ public class Sql2oModel implements Model {
 
 	@Override
 	public void updateSpecies(Species species) {
+
 		try ( Connection conn = sql2o.beginTransaction() ) {
-			conn.createQuery("update species set description = :description where id = :id")
-					.addParameter("description", species.getDescription())
-					.addParameter("id", species.getId())
-					.executeUpdate();
-			conn.commit();
+			if (species.getId() == -1) {
+				conn.createQuery("insert into species ( description ) " +
+							" VALUES ( :description ) ")
+						.addParameter("description", species.getDescription())
+						.executeUpdate();
+				conn.commit();
+			} else {
+				conn.createQuery("update species set description = :description where id = :id")
+						.addParameter("description", species.getDescription())
+						.addParameter("id", species.getId())
+						.executeUpdate();
+				conn.commit();
+			}
 		}
 	}
 
