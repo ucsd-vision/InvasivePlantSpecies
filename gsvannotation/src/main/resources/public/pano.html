@@ -9,7 +9,7 @@ div {
 
 select {
 	vertical-align: top;
-}
+}imd
 </style>
 </head>
 
@@ -219,10 +219,12 @@ canvas.onmousemove = function (e) {
     if (mouseButtonDown) {
       panoOffset.x = xVal - startCoords.x;
       panoOffset.y = yVal - startCoords.y;
-      if( panoOffset.x < -(img.width*2 - canvas.width) ) {
+      if( panoOffset.x < -(img.width - canvas.width) ) {
         panoOffset.x += img.width;
       }
-      //console.debug("x: " + panoOffset.x + " y: " + panoOffset.y  );
+      if( panoOffset.x > img.width ) {
+    	  panoOffset.x -= img.width;
+      }
       updateDisplay();
     }
   } else if( mode == modesEnum.BoundingBox ) {
@@ -355,6 +357,14 @@ canvas.onmouseup   = function (e) {
       x: e.pageX - this.offsetLeft - startCoords.x,
       y: e.pageY - this.offsetTop - startCoords.y
     };
+    if(last.x > img.width) { 
+    	last.x -= img.width;
+    }
+    if( last.x < -(img.width - canvas.width) ) {
+        last.x += img.width;
+      }
+    console.debug("pano x: " + panoOffset.x + " y: " + panoOffset.y  );
+    console.debug("last: " + last.x);
     break;
   case modesEnum.BoundingBox:
     var endCoords = { x: e.pageX - this.offsetLeft - last.x, y: e.pageY - this.offsetTop - last.y };

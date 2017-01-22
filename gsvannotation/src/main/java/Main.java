@@ -22,7 +22,7 @@ public class Main {
 			BufferedReader stdInput = new BufferedReader( new InputStreamReader( p.getInputStream() ));
 			
 			String panoId = stdInput.readLine();
-			if(panoId.contains("Traceback")) {
+			if(panoId==null || panoId.contains("Traceback")) {
 				panoId = "";
 			}
 			return panoId;
