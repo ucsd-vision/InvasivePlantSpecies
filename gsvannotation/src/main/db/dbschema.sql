@@ -82,11 +82,9 @@ SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
 
 -- insert some data to species table
 
-insert into species ( description ) values ('Phragmite');
-
 insert into species ( description ) values ('Japanese Knotweed');
 
-insert into species ( description ) values ('Common Reed');
+insert into species ( description ) values ('Common Reed (Phragmite)');
 
 insert into species ( description ) values ('Wild Parsnip');
 
