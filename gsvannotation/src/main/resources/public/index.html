@@ -37,7 +37,7 @@ function latlng2pano() {
 				window.location.assign("pano.html?panoId=" + panoId );
 			} else {
 				btn.disabled=false;
-				span.innerHTML = "Failed to create pano with current lat/lng coordinates";
+				statusSpan.innerHTML = "Failed to create pano with current lat/lng coordinates";
 			}
 		}
 	};
