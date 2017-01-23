@@ -1,14 +1,14 @@
 package gsvannotation.db;
 
 public class Species {
-	private int id;
+	private int speciesId;
 	private String description;
 	
-	public int getId() {
-		return id;
+	public int getSpeciesId() {
+		return speciesId;
 	}
-	public void setId(int id) {
-		this.id = id;
+	public void setSpeciesId(int id) {
+		this.speciesId = id;
 	}
 	public String getDescription() {
 		return description;

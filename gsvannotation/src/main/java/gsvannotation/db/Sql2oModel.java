@@ -13,13 +13,16 @@ public class Sql2oModel implements Model {
 	}
 
 	@Override
-	public void insertPanorama(String panoId, double lat, double lng) {
+	public void insertPanorama(Panorama pano) {
 		try ( Connection conn = sql2o.beginTransaction() ) {
-			conn.createQuery("insert into gsv_pano ( panoId, lat, lng ) " + 
-					" VALUES ( :panoId, :lat, :lng ) ")
-				.addParameter("panoId",  panoId)
-				.addParameter("lat",  lat)
-				.addParameter("lng",  lng)
+			conn.createQuery("insert into panorama ( panoramaId, lat, lng, description, region, country ) " + 
+					" VALUES ( :panoramaId, :lat, :lng, :description, :region, :country ) ")
+				.addParameter("panoramaId",  pano.getPanoramaId())
+				.addParameter("lat",  pano.getLat())
+				.addParameter("lng",  pano.getLng())
+				.addParameter("description",  pano.getDescription())
+				.addParameter("region",  pano.getRegion())
+				.addParameter("country",  pano.getCountry())
 				.executeUpdate();
 			conn.commit();
 		}
@@ -28,10 +31,10 @@ public class Sql2oModel implements Model {
 	@Override
 	public List<Panorama> getAllPanos() {
 		try( Connection conn = sql2o.open()) {
-			List<Panorama> panos = conn.createQuery("select * from gsv_pano")
+			List<Panorama> panos = conn.createQuery("select * from panorama")
 					.executeAndFetch(Panorama.class);
 			for( Panorama pano : panos ) {
-				pano.setBoundingBoxes( getPanoBoundingBoxes(pano.getPanoId()));
+				pano.setBoundingBoxes( getPanoBoundingBoxes(pano.getPanoramaId()));
 			}
 			return panos;
 		}
@@ -49,10 +52,10 @@ public class Sql2oModel implements Model {
 	@Override
 	public List<BoundingBox> getPanoBoundingBoxes(String panoId) {
 		try( Connection conn = sql2o.open() ) {
-			List<BoundingBox> boundingBoxes = conn.createQuery("select species_id, topleftX, topleftY,  bottomrightX, bottomrightY " + 
-					" from bounding_box where gsv_pano_panoid = :panoid")
+			List<BoundingBox> boundingBoxes = conn.createQuery("select species_speciesId, topleftX, topleftY,  bottomrightX, bottomrightY " + 
+					" from bounding_box where panorama_panoramaId = :panoid")
 					.addParameter("panoid",  panoId)
-					.addColumnMapping("species_id", "speciesId")
+					.addColumnMapping("species_speciesId", "speciesId")
 					.executeAndFetch(BoundingBox.class);
 			return boundingBoxes;
 		}
@@ -61,26 +64,26 @@ public class Sql2oModel implements Model {
 	@Override
 	public Panorama getPanorama(String panoId) {
 		try( Connection conn = sql2o.open() ) {
-			Panorama pano = conn.createQuery("select * from gsv_pano where panoId = :panoid")
+			Panorama pano = conn.createQuery("select * from panorama where panoramaId = :panoid")
 					.addParameter("panoid",  panoId)
 					.executeAndFetchFirst(Panorama.class);
 			if( pano != null ) {
-				pano.setBoundingBoxes(getPanoBoundingBoxes(pano.getPanoId()));
+				pano.setBoundingBoxes(getPanoBoundingBoxes(pano.getPanoramaId()));
 			}
 			return pano;
 		}
 	}
 
 	@Override
-	public void updatePanorama(Panorama pano) {
+	public void updatePanoramaBoundingBoxes(Panorama pano) {
 		try ( Connection conn = sql2o.beginTransaction() ) {
-			conn.createQuery("delete from bounding_box where gsv_pano_panoid = :panoId")
-				.addParameter("panoId",  pano.getPanoId())
+			conn.createQuery("delete from bounding_box where panorama_panoramaId = :panoId")
+				.addParameter("panoId",  pano.getPanoramaId())
 				.executeUpdate();
 			for( BoundingBox bb : pano.getBoundingBoxes() ) {
-				conn.createQuery("insert into bounding_box ( gsv_pano_panoid, species_id, topleftX, topleftY, bottomrightX, bottomrightY ) " + 
+				conn.createQuery("insert into bounding_box ( panorama_panoramaId, species_speciesId, topleftX, topleftY, bottomrightX, bottomrightY ) " + 
 						" VALUES ( :panoId, :speciesId, :tlX, :tlY, :brX, :brY ) ")
-					.addParameter("panoId",  pano.getPanoId())
+					.addParameter("panoId",  pano.getPanoramaId())
 					.addParameter("speciesId",  bb.getSpeciesId())
 					.addParameter("tlX",  bb.getTopLeftX())
 					.addParameter("tlY",  bb.getTopLeftY())
@@ -97,7 +100,7 @@ public class Sql2oModel implements Model {
 	public void updateSpecies(Species species) {
 
 		try ( Connection conn = sql2o.beginTransaction() ) {
-			if (species.getId() == -1) {
+			if (species.getSpeciesId() == -1) {
 				conn.createQuery("insert into species ( description ) " +
 							" VALUES ( :description ) ")
 						.addParameter("description", species.getDescription())
@@ -106,7 +109,7 @@ public class Sql2oModel implements Model {
 			} else {
 				conn.createQuery("update species set description = :description where id = :id")
 						.addParameter("description", species.getDescription())
-						.addParameter("id", species.getId())
+						.addParameter("id", species.getSpeciesId())
 						.executeUpdate();
 				conn.commit();
 			}

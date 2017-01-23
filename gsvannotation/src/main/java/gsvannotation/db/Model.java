@@ -3,17 +3,14 @@ package gsvannotation.db;
 import java.util.List;
 
 public interface Model {
-	void insertPanorama(String panoId, double lat, double lng);
-	
-	void updatePanorama(Panorama pano);
-
-	void updateSpecies(Species species);
-	
+	Panorama getPanorama(String panoId);
+	void insertPanorama(Panorama pano);
+	void updatePanoramaBoundingBoxes(Panorama pano);
 	List<Panorama> getAllPanos();
 
-	List<Species> getAllSpecies();
 
+	List<Species> getAllSpecies();
+	void updateSpecies(Species species);
 	List<BoundingBox> getPanoBoundingBoxes(String panoId);
 
-	Panorama getPanorama(String panoId);
 }

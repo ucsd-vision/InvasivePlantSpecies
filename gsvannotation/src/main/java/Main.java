@@ -9,26 +9,28 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static spark.Spark.*;
 
 public class Main {
 	
-	public static String getPanoId(double lat, double lng) {
+	public static Panorama getPanoId(double lat, double lng) {
 		try {
 			Process p = Runtime.getRuntime().exec("python src/main/python/latlng2pano.py " +lat + " " + lng);
 			p.waitFor();
 			
 			BufferedReader stdInput = new BufferedReader( new InputStreamReader( p.getInputStream() ));
 			
-			String panoId = stdInput.readLine();
-			if(panoId==null || panoId.contains("Traceback")) {
-				panoId = "";
-			}
-			return panoId;
+			// for converting POJOs to json
+			ObjectMapper jsonMapper = new ObjectMapper();
+			String json = stdInput.lines().collect(Collectors.joining());
+			
+			Panorama pano = jsonMapper.readValue(json,  Panorama.class);
+			return pano;
 		} catch( Exception e ) {
 			e.printStackTrace();
-			return "";
+			return null;
 		}
 	}
 	
@@ -50,8 +52,11 @@ public class Main {
 		// for converting POJOs to json
 		ObjectMapper jsonMapper = new ObjectMapper();
 		
+		// panorama images will be saved here
+		// TODO: possibly make this a command line argument
 		externalStaticFileLocation("external");
 		
+		// for static html/css/js files
 		staticFileLocation("/public");
 		
 		get("/getPano", (request, response) -> {
@@ -59,10 +64,10 @@ public class Main {
 			// assumes jar is run from a folder containing a panos subfolder
 			// checks if panoid panoarama image exists under panos subfolder
 			// if it doesn't exist, it downloads it using the python script
-			String panoId = request.queryParams("panoId");
-			Panorama pano = model.getPanorama(panoId);
+			String panoramaId = request.queryParams("panoramaId");
+			Panorama pano = model.getPanorama(panoramaId);
 			
-			File panoImage = new File("external/pano_images/" + panoId + "_z3.jpg");
+			File panoImage = new File("external/pano_images/" + panoramaId + "_z3.jpg");
 			if( !panoImage.exists() ) {
 				Process p = Runtime.getRuntime().exec("python src/main/python/getPanoImage.py " + 
 						pano.getLat() + " " + pano.getLng());
@@ -81,32 +86,18 @@ public class Main {
 			Species specie = null;
 			for (Species s :
 					species) {
-				if (s.getId() == id) {
+				if (s.getSpeciesId() == id) {
 					specie = s;
 				}
 			}
 
 			return jsonMapper.writeValueAsString( specie );
 		});
-
-		get("/createPano", (request, response) -> {
-			String panoId = request.queryParams("panoId");
-			double lat = Double.parseDouble( request.queryParams("lat") );
-			double lng = Double.parseDouble( request.queryParams("lng") );
-			
-			model.insertPanorama(panoId,  lat,  lng);
-			return null;
-		});
-		
-		get("/getBoundingBoxes/:panoid", (request, response) -> {
-			// returns (json maybe) bounding boxes for requested panoid
-			return null;
-		});
 		
 		post("/savePano", (request, response) -> {
 			String body = request.body();
 			Panorama pano = jsonMapper.readValue(body,  Panorama.class);
-			model.updatePanorama( pano );
+			model.updatePanoramaBoundingBoxes( pano );
 			response.status(200);
 			return "ok";
 		});
@@ -133,14 +124,13 @@ public class Main {
 		get("/latlng2pano", (request, response) -> {
 			double lat = Double.parseDouble(request.queryParams("lat"));
 			double lng = Double.parseDouble(request.queryParams("lng"));
-			String panoId = getPanoId(lat,  lng);
-			if( panoId != "" ) {
-				Panorama pano = model.getPanorama(panoId);
-				if( pano == null ) {
-					model.insertPanorama(panoId,  lat,  lng);
+			Panorama pano = getPanoId(lat,  lng);
+			if( pano != null ) {
+				if( model.getPanorama(pano.getPanoramaId()) == null ) {
+					model.insertPanorama(pano);
 				}
 			}
-			return panoId;
+			return pano.getPanoramaId();
 		});
 	}
 }

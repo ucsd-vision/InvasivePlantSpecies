@@ -22,6 +22,13 @@ select {
 <div id="divStatus">
 </div>
 <div>
+<h3>Panorama Details</h3>
+<b>Description: </b><span id=panoDescription></span> 
+<b>Region: </b><span id="panoRegion"></span>
+<b>Country: </b><span id="panoCountry"></span>
+</div>
+
+<div>
 <h3>Bounding boxes</h3>
 <div id="divBoundingBoxes"></div>
 </div>
@@ -73,11 +80,14 @@ xobj.onreadystatechange = function() {
 	if( this.readyState == 4 && this.status == 200 ) {
 		statusDiv.innerHTML="";
 		panoObj = JSON.parse(this.responseText);
-		img.src = "pano_images/"+urlParams.panoId+"_z3.jpg";
+		img.src = "pano_images/"+urlParams.panoramaId+"_z3.jpg";
+		document.getElementById("panoDescription").innerHTML=panoObj.description;
+		document.getElementById("panoRegion").innerHTML=panoObj.region;
+		document.getElementById("panoCountry").innerHTML=panoObj.country;
 		updateDisplay();
 	}
 }
-xobj.open('GET', '/getPano?panoId='+urlParams.panoId, true);
+xobj.open('GET', '/getPano?panoramaId='+urlParams.panoramaId, true);
 xobj.send();
 
 
@@ -330,7 +340,7 @@ function addBoundingBox(bbStart, bbEnd, speciesId) {
   	var speciesDropdown = document.createElement("select");
 	speciesJson.forEach( function( species ) {
 		var opt = document.createElement("option");
-		opt.value = species.id;
+		opt.value = species.speciesId;
 		opt.text = species.description;
 		if( opt.value == speciesId ) {
 			opt.selected=true;
@@ -379,7 +389,7 @@ function save() {
 	saveButton.disabled=true;
 	saveButton.value="Saving...";
 	// put in format back end will understand
-	var pano = {panoId:urlParams.panoId, lat:0, lng:0, image:"", boundingBoxes:[]};
+	var pano = {panoramaId:urlParams.panoramaId, lat:0, lng:0, image:"", boundingBoxes:[]};
 	boundingBoxes.forEach( function(bb, index) { 
 		var newbb = {topLeftX: bb.start.x, topLeftY: bb.start.y,
 				bottomRightX:bb.end.x, bottomRightY: bb.end.y};
