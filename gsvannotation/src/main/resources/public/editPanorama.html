@@ -36,7 +36,10 @@ select {
 <input type="button" value="Save" onclick="save()" id="btnSave" />
 </div>
 <script type="text/javascript">
-
+var unsavedChanges = false;
+window.onbeforeunload = function(e) {
+	if( unsavedChanges ) return "Unsaved changes";
+}
 // parse querystring
 var urlParams;
 (window.onpopstate = function () {
@@ -65,6 +68,9 @@ img.onload=function() {
 		addBoundingBox(start, end, bb.speciesId);
 	});
 	render();
+	// the addboundingbox method sets unsavedChanges to true
+	// we don't want it to be true yet
+	unsavedChanges=false;
 };
 	
 //another ajax call to get all species
@@ -338,6 +344,7 @@ function addBoundingBox(bbStart, bbEnd, speciesId) {
 	newdiv.append(newimg);
   	
   	var speciesDropdown = document.createElement("select");
+  	speciesDropdown.onchange=function( e ) { unsavedChanges=true;};
 	speciesJson.forEach( function( species ) {
 		var opt = document.createElement("option");
 		opt.value = species.speciesId;
@@ -352,7 +359,8 @@ function addBoundingBox(bbStart, bbEnd, speciesId) {
 
 	bbdiv.append(newdiv);
 	boundingBoxes.push(newbb);
-
+	
+	unsavedChanges=true;
 }
 
 canvas.onmouseup   = function (e) {
@@ -404,6 +412,7 @@ function save() {
 	xobj.onreadystatechange = function() {
 		if( this.readyState == 4 && this.status == 200 ) {
 			saveButton.value="Done";
+			unsavedChanges=false;
 			window.location.assign("/panoramas.html");
 		}
 	}

@@ -3,5 +3,7 @@
 .classpath
 .settings
 *.pyc
+*.bak
+*.idea
 
 /target/
