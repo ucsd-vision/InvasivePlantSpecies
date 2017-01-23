@@ -107,7 +107,7 @@ public class Sql2oModel implements Model {
 						.executeUpdate();
 				conn.commit();
 			} else {
-				conn.createQuery("update species set description = :description where id = :id")
+				conn.createQuery("update species set description = :description where speciesId = :id")
 						.addParameter("description", species.getDescription())
 						.addParameter("id", species.getSpeciesId())
 						.executeUpdate();

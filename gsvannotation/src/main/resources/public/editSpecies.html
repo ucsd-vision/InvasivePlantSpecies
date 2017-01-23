@@ -33,20 +33,22 @@
             while (match = search.exec(query))
                 urlParams[decode(match[1])] = decode(match[2]);
         })();
-
-
-        var xobj = new XMLHttpRequest();
-        xobj.overrideMimeType("application/json");
-        xobj.onreadystatechange = function () {
-            if (this.readyState == 4 && this.status == 200) {
-                speciesObj = JSON.parse(this.responseText);
-                var text = document.getElementById("gsvSpecies");
-                text.value = speciesObj.description;
-            }
-        };
-        xobj.open('GET', '/getSpecies?speciesId=' + urlParams.id, true);
-        xobj.send();
-
+		// check if we're creating a new species
+        if( urlParams.speciesId == null ) {
+        	urlParams.speciesId=-1;
+        } else {
+	        var xobj = new XMLHttpRequest();
+	        xobj.overrideMimeType("application/json");
+	        xobj.onreadystatechange = function () {
+	            if (this.readyState == 4 && this.status == 200) {
+	                speciesObj = JSON.parse(this.responseText);
+	                var text = document.getElementById("gsvSpecies");
+	                text.value = speciesObj.description;
+	            }
+	        };
+	        xobj.open('GET', '/getSpecies?speciesId=' + urlParams.speciesId, true);
+	        xobj.send();
+        }
 
         function updateSpecies() {
             var saveButton = document.getElementById("speciesSave");
@@ -54,7 +56,7 @@
             saveButton.value = "Saving...";
             var descriptor = document.getElementById("gsvSpecies").value;
 
-            var species = {id: urlParams.id, description: descriptor};
+            var species = {speciesId: urlParams.speciesId, description: descriptor};
 
             json = JSON.stringify(species);
             var xobj = new XMLHttpRequest();

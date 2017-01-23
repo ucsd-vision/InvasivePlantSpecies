@@ -17,8 +17,8 @@
 					jsonSpecies.forEach(function(species) {
 						var newrow = document.createElement("tr")
 						newrow.innerHTML = "<td>" + species.description
-								+ "</td><td><a href='editSpecies.html?id="
-								+ species.id + "'>edit</a></td>";
+								+ "</td><td><a href='editSpecies.html?speciesId="
+								+ species.speciesId + "'>edit</a></td>";
 
 						document.getElementById("bbtable").append(newrow);
 					});
@@ -38,7 +38,7 @@
 			</tbody>
 		</table>
 		<br/>
-		<a href="editSpecies.html?id=-1">Add a new species</a>
+		<a href="editSpecies.html">Add a new species</a>
 
 	</div>
 </body>
