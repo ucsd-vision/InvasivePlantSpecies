@@ -404,7 +404,7 @@ function save() {
 	xobj.onreadystatechange = function() {
 		if( this.readyState == 4 && this.status == 200 ) {
 			saveButton.value="Done";
-			window.location.assign("/index.html");
+			window.location.assign("/panoramas.html");
 		}
 	}
 	xobj.send(json);

@@ -4,76 +4,12 @@
 </head>
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 
-<script type="text/javascript">
-var xobj = new XMLHttpRequest();
-xobj.overrideMimeType("application/json");
-xobj.onreadystatechange = function() {
-	if( this.readyState == 4 && this.status == 200 ) {
-		jsonPanos = JSON.parse(this.responseText);
-		jsonPanos.forEach( function( pano ) {
-                  var newrow = document.createElement("tr")
-                  newrow.innerHTML = "<td>"+pano.panoramaId+"</td><td>"+pano.lat + ", " + pano.lng + "</td>"+
-                  "<td>"+pano.description+"</td>"+
-                  "<td>"+pano.region+"</td>"+
-                  "<td>"+pano.country+"</td>"+
-                  "<td>" + pano.boundingBoxes.length+"</td><td><a href='pano.html?panoramaId="+pano.panoramaId+"'>edit</a></td>";
-
-			document.getElementById("bbtable").append(newrow);
-		});
-		
-	}
-}
-xobj.open('GET', '/getAllPanos', true);
-xobj.send();
-
-function latlng2pano() {
-	var btn = document.getElementById("latlngGo");
-	var statusSpan = document.getElementById("latlngStatus");
-	statusSpan.innerHTML="Creating...";
-	var lat = document.getElementById("gsvLat").value;
-	var lng = document.getElementById("gsvLng").value;
-	
-	var xobj = new XMLHttpRequest();
-	xobj.onreadystatechange = function() {
-		if( this.readyState == 4 && this.status == 200 ) {
-			if( this.responseText != "" ) {
-				var panoramaId = this.responseText;
-				window.location.assign("pano.html?panoramaId=" + panoramaId );
-			} else {
-				btn.disabled=false;
-				statusSpan.innerHTML = "Failed to create pano with current lat/lng coordinates";
-			}
-		}
-	};
-	xobj.open('GET', '/latlng2pano?lat='+lat+'&lng='+lng, true);
-	xobj.send();
-}
-</script>
 <body>
-<div>
-<h2>Add GSV panorama for annotation</h2>
-<!--Enter a Google Street View URL: <input type="text" id="gsvUrl" /><input type="button" id="gsvUrlGo" value="go" /><br />-->
-
-Enter a GPS coordinates Lat: <input type="text" id="gsvLat" width="8" /> Lng: <input type="text" id="gsvLng" width="8"/><input type="button" id="latlngGo" value="go" onclick="latlng2pano()" /><span id="latlngStatus"></span>
-</div>
-<div>
-<h2>Existing panos</h2>
-
-<table id="bbtable" border="1" cellspacing=0 cellpadding=0>
-<tr>
-	<th>Pano Id</th>
-	<th>Lat,Lng</th>
-	<th>Description</th>
-	<th>Region</th>
-	<th>Country</th>
-	<th>Bounding Boxes</th>
-	<th></th>
-</tr>
-<tbody>
-</tbody>
-</table>
-
-</div>
+<h1>Invasive species annotation tool</h1>
+<ul>
+  <li><a href="panoramas.html">Add/edit Google street view panoramas</a></li>
+  <li><a href="species.html">Add/edit invasive plant species</a></li>
+</ul>
 </body>
 </html>
 
