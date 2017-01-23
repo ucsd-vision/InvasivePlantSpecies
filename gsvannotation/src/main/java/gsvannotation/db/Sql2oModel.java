@@ -31,7 +31,7 @@ public class Sql2oModel implements Model {
 	@Override
 	public List<Panorama> getAllPanos() {
 		try( Connection conn = sql2o.open()) {
-			List<Panorama> panos = conn.createQuery("select * from panorama")
+			List<Panorama> panos = conn.createQuery("select * from panorama order by region")
 					.executeAndFetch(Panorama.class);
 			for( Panorama pano : panos ) {
 				pano.setBoundingBoxes( getPanoBoundingBoxes(pano.getPanoramaId()));
