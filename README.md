@@ -10,6 +10,9 @@ To build and run the project you will need the following
   * The gsvannotation/src/main/db/dbschema.sql contains the forward engineered sql script from the eer diagram, plus some inserts
 * Java
 * Apache maven ( http://maven.apache.org/ ) 
+* Python
+  * numpy , see http://www.scipy.org/install.html , easiest to install via pip: `pip install numpy`
+  * Python Imaging Library (PIL), easiest to install via pip: `pip install pillow`
 
 To build the annotation tool, cd into the gsvannotation folder and run `mvn install`.  Maven should download all the required dependencies.  Dependencies include:
 * SparkJava ( http://sparkjava.com/ ), a java based web framework
