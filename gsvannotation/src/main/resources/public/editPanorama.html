@@ -341,7 +341,7 @@ function addBoundingBox(bbStart, bbEnd, speciesId) {
 		  0, // where to place image on canvas
 		  endX-startX, // width 
 		  endY-startY); // height
-	newdiv.append(newimg);
+	newdiv.appendChild(newimg);
   	
   	var speciesDropdown = document.createElement("select");
   	speciesDropdown.onchange=function( e ) { unsavedChanges=true;};
@@ -355,9 +355,9 @@ function addBoundingBox(bbStart, bbEnd, speciesId) {
 		speciesDropdown.options.add(opt);
 	});
 	speciesDropdown.id = "bbSpecies"+boundingBoxes.length;
-	newdiv.append(speciesDropdown);
+	newdiv.appendChild(speciesDropdown);
 
-	bbdiv.append(newdiv);
+	bbdiv.appendChild(newdiv);
 	boundingBoxes.push(newbb);
 	
 	unsavedChanges=true;

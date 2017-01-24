@@ -15,7 +15,7 @@ import static spark.Spark.*;
 
 public class Main {
 	
-	public static Panorama getPanoId(double lat, double lng) {
+	public static Panorama latlng2pano(double lat, double lng) {
 		try {
 			Process p = Runtime.getRuntime().exec("python src/main/python/latlng2pano.py " +lat + " " + lng);
 			p.waitFor();
@@ -124,13 +124,15 @@ public class Main {
 		get("/latlng2pano", (request, response) -> {
 			double lat = Double.parseDouble(request.queryParams("lat"));
 			double lng = Double.parseDouble(request.queryParams("lng"));
-			Panorama pano = getPanoId(lat,  lng);
+			Panorama pano = latlng2pano(lat,  lng);
 			if( pano != null ) {
 				if( model.getPanorama(pano.getPanoramaId()) == null ) {
 					model.insertPanorama(pano);
 				}
+				return pano.getPanoramaId();
+			} else {
+				return "";
 			}
-			return pano.getPanoramaId();
 		});
 	}
 }

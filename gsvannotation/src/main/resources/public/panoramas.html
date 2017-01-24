@@ -1,8 +1,9 @@
 <html>
 <head>
-  <title>Invasive species annotation tool</title>
+    <title>Invasive species annotation tool</title>
 </head>
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+      integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 
 <script type="text/javascript">
 var xobj = new XMLHttpRequest();
@@ -16,9 +17,10 @@ xobj.onreadystatechange = function() {
                   "<td>"+pano.description+"</td>"+
                   "<td>"+pano.region+"</td>"+
                   "<td>"+pano.country+"</td>"+
-                  "<td>" + pano.boundingBoxes.length+"</td><td><a href='editPanorama.html?panoramaId="+pano.panoramaId+"'>edit</a></td>";
+                  "<td>" + pano.boundingBoxes.length+"</td>
+                  <td><a href='editPanorama.html?panoramaId="+pano.panoramaId+"'>edit</a></td>";
 
-			document.getElementById("bbtable").append(newrow);
+			document.getElementById("bbtable").appendChild(newrow);
 		});
 		
 	}
@@ -48,31 +50,37 @@ function latlng2pano() {
 	xobj.open('GET', '/latlng2pano?lat='+lat+'&lng='+lng, true);
 	xobj.send();
 }
+
 </script>
 <body>
 <a href="index.html">Back to index</a>
 <div>
-<h2>Add GSV panorama for annotation</h2>
-<!--Enter a Google Street View URL: <input type="text" id="gsvUrl" /><input type="button" id="gsvUrlGo" value="go" /><br />-->
+    <h2>Add GSV panorama for annotation</h2>
+    <!--Enter a Google Street View URL: <input type="text" id="gsvUrl" /><input type="button" id="gsvUrlGo" value="go" /><br />-->
 
-Enter a GPS coordinates Lat: <input type="text" id="gsvLat" width="8" /> Lng: <input type="text" id="gsvLng" width="8"/><input type="button" id="latlngGo" value="go" onclick="latlng2pano()" /><span id="latlngStatus"></span>
+    Enter a GPS coordinates Lat: <input type="text" id="gsvLat" width="8"/> Lng: <input type="text" id="gsvLng"
+                                                                                        width="8"/><input type="button"
+                                                                                                          id="latlngGo"
+                                                                                                          value="go"
+                                                                                                          onclick="latlng2pano()"/><span
+        id="latlngStatus"></span>
 </div>
 <div>
-<h2>Existing panos</h2>
+    <h2>Existing panos</h2>
 
-<table id="bbtable" border="1" cellspacing=0 cellpadding=0>
-<tr>
-	<th>Pano Id</th>
-	<th>Lat,Lng</th>
-	<th>Description</th>
-	<th>Region</th>
-	<th>Country</th>
-	<th>Bounding Boxes</th>
-	<th></th>
-</tr>
-<tbody>
-</tbody>
-</table>
+    <table id="bbtable" border="1" cellspacing=0 cellpadding=0>
+        <tr>
+            <th>Pano Id</th>
+            <th>Lat,Lng</th>
+            <th>Description</th>
+            <th>Region</th>
+            <th>Country</th>
+            <th>Bounding Boxes</th>
+            <th></th>
+        </tr>
+        <tbody>
+        </tbody>
+    </table>
 
 </div>
 </body>
