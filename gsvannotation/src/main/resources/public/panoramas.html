@@ -6,19 +6,49 @@
       integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 
 <script type="text/javascript">
+
+var speciesJson;
+var xobjSpecies = new XMLHttpRequest();
+xobjSpecies.open('GET', '/getAllSpecies', false); //synchronous call
+xobjSpecies.send();
+speciesJson = JSON.parse(xobjSpecies.responseText);
+
+var speciesIdMap = {};
+
+speciesJson.forEach( function( species ) {
+    speciesIdMap[species.speciesId] = species.description;
+});
+
+var speciesNumber = {};
+
 var xobj = new XMLHttpRequest();
 xobj.overrideMimeType("application/json");
 xobj.onreadystatechange = function() {
 	if( this.readyState == 4 && this.status == 200 ) {
 		jsonPanos = JSON.parse(this.responseText);
 		jsonPanos.forEach( function( pano ) {
+		          var boxes = pano.boundingBoxes;
+		          boxes.forEach( function( box ) {
+		              var speciesDescription = speciesIdMap[box.speciesId];
+		              if (speciesNumber[speciesDescription] == null) {
+		                  speciesNumber[speciesDescription] = 0;
+		              }
+                      speciesNumber[speciesDescription]++;
+		          });
+
+                  var boundingBoxString = "Total: " + pano.boundingBoxes.length;
+
+                  for (description in speciesNumber) {
+                      boundingBoxString += "<br/>" + description + ": " + speciesNumber[description];
+                  }
+
                   var newrow = document.createElement("tr")
                   newrow.innerHTML = "<td>"+pano.panoramaId+"</td><td>"+pano.lat + ", " + pano.lng + "</td>"+
                   "<td>"+pano.description+"</td>"+
                   "<td>"+pano.region+"</td>"+
                   "<td>"+pano.country+"</td>"+
-                  "<td>" + pano.boundingBoxes.length+"</td>
-                  <td><a href='editPanorama.html?panoramaId="+pano.panoramaId+"'>edit</a></td>";
+                  "<td>" + boundingBoxString + "</td>" +
+                  "<td><a href='editPanorama.html?panoramaId="+pano.panoramaId+"'>edit</a></td>";
 
 			document.getElementById("bbtable").appendChild(newrow);
 		});
