@@ -19,7 +19,6 @@ speciesJson.forEach( function( species ) {
     speciesIdMap[species.speciesId] = species.description;
 });
 
-var speciesNumber = {};
 
 var xobj = new XMLHttpRequest();
 xobj.overrideMimeType("application/json");
@@ -28,6 +27,8 @@ xobj.onreadystatechange = function() {
 		jsonPanos = JSON.parse(this.responseText);
 		jsonPanos.forEach( function( pano ) {
 		          var boxes = pano.boundingBoxes;
+		          var speciesNumber = {};
+
 		          boxes.forEach( function( box ) {
 		              var speciesDescription = speciesIdMap[box.speciesId];
 		              if (speciesNumber[speciesDescription] == null) {
