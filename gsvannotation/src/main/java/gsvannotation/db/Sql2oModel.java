@@ -41,6 +41,21 @@ public class Sql2oModel implements Model {
 	}
 
 	@Override
+	public List<Panorama> getPanosBySpeciesId(int speciesId) {
+		try(Connection conn = sql2o.open()) {
+			List<Panorama> panoramas = conn.createQuery("select distinct p.* from panorama p, bounding_box bb" +
+					" where bb.species_speciesId = :speciesid and p.panoramaId = bb.panorama_panoramaId order by region")
+					.addParameter("speciesid", speciesId)
+					.executeAndFetch(Panorama.class);
+			for (Panorama panorama : panoramas) {
+				panorama.setBoundingBoxes(getPanoBoundingBoxes(panorama.getPanoramaId()));
+			}
+
+			return panoramas;
+		}
+	}
+
+	@Override
 	public List<Species> getAllSpecies() {
 		try( Connection conn = sql2o.open() ) {
 			List<Species> species = conn.createQuery("select * from species")

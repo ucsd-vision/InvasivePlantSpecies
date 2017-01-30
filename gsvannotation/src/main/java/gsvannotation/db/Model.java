@@ -7,6 +7,7 @@ public interface Model {
 	void insertPanorama(Panorama pano);
 	void updatePanoramaBoundingBoxes(Panorama pano);
 	List<Panorama> getAllPanos();
+	List<Panorama> getPanosBySpeciesId(int speciesId);
 
 
 	List<Species> getAllSpecies();

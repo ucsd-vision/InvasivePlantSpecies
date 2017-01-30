@@ -134,5 +134,20 @@ public class Main {
 				return "";
 			}
 		});
+
+		get("getPanosBySpeciesId", (request, response) -> {
+			String idString = request.queryParams("speciesId");
+			int id = Integer.parseInt(idString);
+
+			List<Panorama> panoramas;
+
+			if (id == -1) {
+				panoramas = model.getAllPanos();
+			} else {
+				panoramas = model.getPanosBySpeciesId(id);
+			}
+
+			return jsonMapper.writeValueAsString(panoramas);
+		});
 	}
 }

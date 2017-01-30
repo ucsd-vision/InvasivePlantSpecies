@@ -46,120 +46,118 @@
 </body>
 <script type="text/javascript">
 
-var speciesJson;
-var speciesToDisplay = -1;
-var xobjSpecies = new XMLHttpRequest();
-xobjSpecies.open('GET', '/getAllSpecies', false); //synchronous call
-xobjSpecies.send();
-speciesJson = JSON.parse(xobjSpecies.responseText);
+    var speciesToDisplay = -1;
+    var xobjSpecies = new XMLHttpRequest();
+    xobjSpecies.open('GET', '/getAllSpecies', false); //synchronous call
+    xobjSpecies.send();
+    speciesJson = JSON.parse(xobjSpecies.responseText);
 
-var speciesIdMap = {};
+    var speciesIdMap = {};
 
-speciesJson.forEach( function( species ) {
-    speciesIdMap[species.speciesId] = species.description;
-});
-
-var speciesDropdown = document.getElementById("speciesFilter");
-  	speciesDropdown.onchange=function( e ) {
-  	   speciesToDisplay = speciesDropdown.value;
-  	   clearPanos();
-       displayPanos();
-  	};
-	speciesJson.forEach( function( species ) {
-		var opt = document.createElement("option");
-		opt.value = species.speciesId;
-		opt.text = species.description;
-		speciesDropdown.options.add(opt);
-	});
-
-
-var xobj = new XMLHttpRequest();
-xobj.overrideMimeType("application/json");
-xobj.onreadystatechange = function() {
-	if( this.readyState == 4 && this.status == 200 ) {
-		jsonPanos = JSON.parse(this.responseText);
-		displayPanos();
-	}
-}
-xobj.open('GET', '/getAllPanos', true);
-xobj.send();
-
-function latlng2pano() {
-	var btn = document.getElementById("latlngGo");
-	var statusSpan = document.getElementById("latlngStatus");
-	statusSpan.innerHTML="Creating...";
-	var lat = document.getElementById("gsvLat").value;
-	var lng = document.getElementById("gsvLng").value;
-
-	var xobj = new XMLHttpRequest();
-	xobj.onreadystatechange = function() {
-		if( this.readyState == 4 && this.status == 200 ) {
-			if( this.responseText != "" ) {
-				var panoramaId = this.responseText;
-				window.location.assign("editPanorama.html?panoramaId=" + panoramaId );
-			} else {
-				btn.disabled=false;
-				statusSpan.innerHTML = "Failed to create pano with current lat/lng coordinates";
-			}
-		}
-	};
-	xobj.open('GET', '/latlng2pano?lat='+lat+'&lng='+lng, true);
-	xobj.send();
-}
-
-function displayPanos() {
-  jsonPanos.forEach( function( pano ) {
-    if(hasSpecies(pano)) {
-      var boxes = pano.boundingBoxes;
-      var speciesNumber = {};
-
-      boxes.forEach( function( box ) {
-          var speciesDescription = speciesIdMap[box.speciesId];
-          if (speciesNumber[speciesDescription] == null) {
-              speciesNumber[speciesDescription] = 0;
-          }
-          speciesNumber[speciesDescription]++;
-      });
-
-      var boundingBoxString = "Total: " + pano.boundingBoxes.length;
-
-      for (description in speciesNumber) {
-          boundingBoxString += "<br/>" + description + ": " + speciesNumber[description];
-      }
-
-      var newrow = document.createElement("tr");
-      newrow.innerHTML = "<td>"+pano.panoramaId+"</td><td>"+pano.lat + ", " + pano.lng + "</td>"+
-      "<td>"+pano.description+"</td>"+
-      "<td>"+pano.region+"</td>"+
-      "<td>"+pano.country+"</td>"+
-      "<td>" + boundingBoxString + "</td>" +
-      "<td><a href='editPanorama.html?panoramaId="+pano.panoramaId+"'>edit</a></td>";
-
-    document.getElementById("bbtable").tBodies[0].appendChild(newrow);
-    }
-  });
-}
-
-function clearPanos() {
-    var t = document.getElementById("bbtable");
-    t.tBodies[0].innerHTML="";
-}
-
-function hasSpecies(pano) {
-    if (speciesToDisplay == -1) {
-         return true;
-    }
-
-    var hasSpecies = false;
-    var boxes = pano.boundingBoxes;
-    boxes.forEach( function( box ) {
-        if(box.speciesId == speciesToDisplay){
-              hasSpecies = true;
-        }
+    speciesJson.forEach(function (species) {
+        speciesIdMap[species.speciesId] = species.description;
     });
 
-    return hasSpecies;
-}
+    var speciesDropdown = document.getElementById("speciesFilter");
+    speciesDropdown.onchange = function (e) {
+        speciesToDisplay = speciesDropdown.value;
+        clearPanos();
+        displayPanos();
+    };
+    speciesJson.forEach(function (species) {
+        var opt = document.createElement("option");
+        opt.value = species.speciesId;
+        opt.text = species.description;
+        speciesDropdown.options.add(opt);
+    });
+
+    displayPanos();
+
+
+    function latlng2pano() {
+        var btn = document.getElementById("latlngGo");
+        var statusSpan = document.getElementById("latlngStatus");
+        statusSpan.innerHTML = "Creating...";
+        var lat = document.getElementById("gsvLat").value;
+        var lng = document.getElementById("gsvLng").value;
+
+        var xobj = new XMLHttpRequest();
+        xobj.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                if (this.responseText != "") {
+                    var panoramaId = this.responseText;
+                    window.location.assign("editPanorama.html?panoramaId=" + panoramaId);
+                } else {
+                    btn.disabled = false;
+                    statusSpan.innerHTML = "Failed to create pano with current lat/lng coordinates";
+                }
+            }
+        };
+        xobj.open('GET', '/latlng2pano?lat=' + lat + '&lng=' + lng, true);
+        xobj.send();
+    }
+
+    function displayPanos() {
+
+        var xobj = new XMLHttpRequest();
+        xobj.overrideMimeType("application/json");
+        xobj.open('GET', '/getPanosBySpeciesId?speciesId='+speciesToDisplay, false);
+        xobj.send();
+        jsonPanos = JSON.parse(xobj.responseText);
+
+
+        jsonPanos.forEach(function (pano) {
+            if (hasSpecies(pano)) {
+                var boxes = pano.boundingBoxes;
+                var speciesNumber = {};
+
+                boxes.forEach(function (box) {
+                    var speciesDescription = speciesIdMap[box.speciesId];
+                    if (speciesNumber[speciesDescription] == null) {
+                        speciesNumber[speciesDescription] = 0;
+                    }
+                    speciesNumber[speciesDescription]++;
+                });
+
+                var boundingBoxString = "Total: " + pano.boundingBoxes.length;
+
+                for (description in speciesNumber) {
+                    boundingBoxString += "<br/>" + description + ": " + speciesNumber[description];
+                }
+
+                var newrow = document.createElement("tr");
+                newrow.innerHTML = "<td>" + pano.panoramaId + "</td><td>" + pano.lat + ", " + pano.lng + "</td>" +
+                    "<td>" + pano.description + "</td>" +
+                    "<td>" + pano.region + "</td>" +
+                    "<td>" + pano.country + "</td>" +
+                    "<td>" + boundingBoxString + "</td>" +
+                    "<td><a href='editPanorama.html?panoramaId=" + pano.panoramaId + "'>edit</a></td>";
+
+                document.getElementById("bbtable").tBodies[0].appendChild(newrow);
+            }
+        });
+    }
+
+    function clearPanos() {
+        var t = document.getElementById("bbtable");
+        t.tBodies[0].innerHTML = "";
+    }
+
+    function hasSpecies(pano) {
+        if (speciesToDisplay == -1) {
+            return true;
+        }
+
+        var hasSpecies = false;
+        var boxes = pano.boundingBoxes;
+        boxes.forEach(function (box) {
+            if (box.speciesId == speciesToDisplay) {
+                hasSpecies = true;
+            }
+        });
+
+        return hasSpecies;
+    }
 </script>
 </html>
 
