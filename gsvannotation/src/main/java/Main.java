@@ -149,5 +149,8 @@ public class Main {
 
 			return jsonMapper.writeValueAsString(panoramas);
 		});
+
+		get("getNumberOfBoundingBoxesPerSpecies", (request, response)
+				-> jsonMapper.writeValueAsString(model.getNumberOfBoundingBoxesPerSpecies()));
 	}
 }

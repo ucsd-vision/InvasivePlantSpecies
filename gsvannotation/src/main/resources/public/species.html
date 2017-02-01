@@ -1,48 +1,58 @@
 <html>
 <head>
-<title>All Species</title>
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <title>All Species</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 </head>
 
 
 <body>
 <a href="index.html">Back to index</a>
-	<div>
+<div>
 
 
-		<script type="text/javascript">
-			var xobj = new XMLHttpRequest();
-			xobj.overrideMimeType("application/json");
-			xobj.onreadystatechange = function() {
-				if (this.readyState == 4 && this.status == 200) {
-					jsonSpecies = JSON.parse(this.responseText);
-					jsonSpecies.forEach(function(species) {
-						var newrow = document.createElement("tr")
-						newrow.innerHTML = "<td>" + species.description
-								+ "</td><td><a href='editSpecies.html?speciesId="
-								+ species.speciesId + "'>edit</a></td>";
+    <script type="text/javascript">
 
-						document.getElementById("bbtable").appendChild(newrow);
-					});
+        var jsonList;
+        var xobj2 = new XMLHttpRequest();
+        xobj2.overrideMimeType("application/json");
+        xobj2.open('GET', '/getNumberOfBoundingBoxesPerSpecies', false);
+        xobj2.send();
 
-				}
-			}
-			xobj.open('GET', '/getAllSpecies', true);
-			xobj.send();
-		</script>
+        jsonList = JSON.parse(xobj2.responseText);
+        var xobj = new XMLHttpRequest();
+        xobj.overrideMimeType("application/json");
+        xobj.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                jsonSpecies = JSON.parse(this.responseText);
+                jsonSpecies.forEach(function (species) {
+                    var newrow = document.createElement("tr")
+                    newrow.innerHTML = "<td>" + species.description
+                        + "</td><td>"+ jsonList[species.speciesId]+"</td>"
+                        + "<td><a href='editSpecies.html?speciesId="
+                        + species.speciesId + "'>edit</a></td>";
+
+                    document.getElementById("bbtable").appendChild(newrow);
+                });
+
+            }
+        };
+        xobj.open('GET', '/getAllSpecies', true);
+        xobj.send();
+    </script>
 
 
+    <table id="bbtable" border="1" cellspacing=0 cellpadding=0>
+        <tr>
+            <th>Species</th>
+            <th>Bounding Boxes of Species</th>
+            <tbody>
+            </tbody>
+    </table>
+    <br/>
+    <a href="editSpecies.html">Add a new species</a>
 
-		<table id="bbtable" border="1" cellspacing=0 cellpadding=0>
-			<tr>
-				<th>Species</th>
-			<tbody>
-			</tbody>
-		</table>
-		<br/>
-		<a href="editSpecies.html">Add a new species</a>
-
-	</div>
+</div>
 </body>
 
 </html>

@@ -1,9 +1,15 @@
 package gsvannotation.db;
 
 import org.sql2o.Connection;
+import org.sql2o.ResultSetHandler;
 import org.sql2o.Sql2o;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Sql2oModel implements Model {
 	private Sql2o sql2o;
@@ -77,6 +83,40 @@ public class Sql2oModel implements Model {
 	}
 
 	@Override
+	public Map<Integer, Integer> getNumberOfBoundingBoxesPerSpecies() {
+		Map<Integer, Integer> map = new HashMap<>();
+
+		List<SpeciesAndBoundingBoxCount> speciesList = new ArrayList<>();
+
+		try(Connection connection = sql2o.open() ) {
+			 speciesList = connection.createQuery("select s.*, count(bb.species_speciesId) bb_count " +
+					 "from species s " +
+					 "left join bounding_box bb on s.speciesId = bb.species_speciesId " +
+					 "group by s.speciesId")
+					.executeAndFetch(new ResultSetHandler<SpeciesAndBoundingBoxCount>() {
+						@Override
+						public SpeciesAndBoundingBoxCount handle(ResultSet resultSet) throws SQLException {
+							SpeciesAndBoundingBoxCount s = new SpeciesAndBoundingBoxCount();
+							s.setSpeciesId(resultSet.getInt("speciesId"));
+							s.setDescription(resultSet.getString("description"));
+							s.setBoundingBoxCount(resultSet.getInt("bb_count"));
+							return s;
+						}
+					});
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		for (SpeciesAndBoundingBoxCount s :
+				speciesList) {
+			map.put(s.getSpeciesId(), s.getBoundingBoxCount());
+		}
+
+		return map;
+	}
+
+	@Override
 	public Panorama getPanorama(String panoId) {
 		try( Connection conn = sql2o.open() ) {
 			Panorama pano = conn.createQuery("select * from panorama where panoramaId = :panoid")
@@ -131,4 +171,26 @@ public class Sql2oModel implements Model {
 		}
 	}
 
+	public static class SpeciesAndBoundingBoxCount extends Species {
+		private int boundingBoxCount;
+
+		public SpeciesAndBoundingBoxCount() {
+			super();
+		}
+
+		public SpeciesAndBoundingBoxCount(int speciesId, String description, int boundingBoxCount) {
+			super();
+			setSpeciesId(speciesId);
+			setDescription(description);
+			boundingBoxCount = boundingBoxCount;
+		}
+
+		public int getBoundingBoxCount() {
+			return boundingBoxCount;
+		}
+
+		public void setBoundingBoxCount(int boundingBoxCount) {
+			this.boundingBoxCount = boundingBoxCount;
+		}
+	}
 }

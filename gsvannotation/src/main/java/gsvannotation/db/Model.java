@@ -1,6 +1,7 @@
 package gsvannotation.db;
 
 import java.util.List;
+import java.util.Map;
 
 public interface Model {
 	Panorama getPanorama(String panoId);
@@ -13,5 +14,7 @@ public interface Model {
 	List<Species> getAllSpecies();
 	void updateSpecies(Species species);
 	List<BoundingBox> getPanoBoundingBoxes(String panoId);
+
+	Map<Integer, Integer> getNumberOfBoundingBoxesPerSpecies();
 
 }
