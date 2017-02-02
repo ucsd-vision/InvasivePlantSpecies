@@ -178,13 +178,6 @@ public class Sql2oModel implements Model {
 			super();
 		}
 
-		public SpeciesAndBoundingBoxCount(int speciesId, String description, int boundingBoxCount) {
-			super();
-			setSpeciesId(speciesId);
-			setDescription(description);
-			boundingBoxCount = boundingBoxCount;
-		}
-
 		public int getBoundingBoxCount() {
 			return boundingBoxCount;
 		}
