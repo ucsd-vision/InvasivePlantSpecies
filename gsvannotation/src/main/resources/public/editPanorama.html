@@ -38,13 +38,13 @@
 </div>
 <div>
     <input type="button" value="Save" onclick="save()" id="btnSave"/>
-    <input type="button" value="cancel" onclick="cancel()" id="btnCancel"/>
+    <input type="button" value="Cancel" onclick="cancel()" id="btnCancel"/>
 </div>
 <script type="text/javascript">
     var unsavedChanges = false;
     window.onbeforeunload = function (e) {
         if (unsavedChanges) return "Unsaved changes";
-    }
+    };
     // parse querystring
     var urlParams;
     (window.onpopstate = function () {
@@ -434,6 +434,7 @@
     }
 
     function cancel() {
+        unsavedChanges = false;
         window.location.assign("/panoramas.html");
     }
 </script>
