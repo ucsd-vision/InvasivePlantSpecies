@@ -114,8 +114,8 @@
 
     var mouseButtonDown = false;
 
-    var modesEnum = {"None": 0, "Pan": 1, "BoundingBox": 2}
-    var mode = modesEnum.None;
+    var modesEnum = {"Select": 0, "Pan": 1, "BoundingBox": 2}
+    var mode = modesEnum.Select;
 
     var boundingBoxes = [];
 
@@ -124,7 +124,7 @@
 
     function updateDisplay() {
         switch (mode) {
-            case modesEnum.None:
+            case modesEnum.Select:
                 canvas.style.cursor = "";
                 document.getElementById("divStatus").innerHTML = "Select mode";
                 break;
@@ -159,7 +159,7 @@
     }
 
     function defaultMode() {
-        mode = modesEnum.None;
+        mode = modesEnum.Select;
         updateDisplay();
     }
 
@@ -301,7 +301,7 @@
         };
 
         switch (mode) {
-            case modesEnum.None:
+            case modesEnum.Select:
                 findBoundingBox(xVal, yVal);
                 break;
             case modesEnum.Pan:
@@ -380,7 +380,7 @@
         mouseButtonDown = false;
 
         switch (mode) {
-            case modesEnum.None:
+            case modesEnum.Select:
                 break;
             case modesEnum.Pan:
                 last = {
