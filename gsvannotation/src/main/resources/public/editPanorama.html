@@ -120,7 +120,7 @@
     var boundingBoxes = [];
 
     var selectedBBIndex = -1;
-
+    var resizingBBIndex = -1; //to store which bounding box is being resized
 
     function updateDisplay() {
         switch (mode) {
@@ -138,11 +138,7 @@
                 break;
         }
 
-        if (selectedBBIndex == -1) {
-            document.getElementById("deleteBB").disabled = true;
-        } else {
-            document.getElementById("deleteBB").disabled = false;
-        }
+        document.getElementById("deleteBB").disabled = selectedBBIndex == -1;
 
         render();
     }
@@ -230,7 +226,7 @@
             end.x - start.x, end.y - start.y);
     }
 
-    canvas.onmousemove = function (e) {
+    canvas.onmousemove = function (e) { //todo: this method will need to be modified
         'use strict';
         var xVal = e.pageX - this.offsetLeft,
             yVal = e.pageY - this.offsetTop;
@@ -274,7 +270,7 @@
         }
     }
 
-    function findBoundingBox(x, y) {
+    function findBoundingBox(x, y) { //todo: this method will be useful
         x -= panoOffset.x;
         y -= panoOffset.y;
         selectedBBIndex = -1;
@@ -290,7 +286,7 @@
 
     }
 
-    canvas.onmousedown = function (e) {
+    canvas.onmousedown = function (e) { //todo: needs to be modified
         'use strict';
         var xVal = e.pageX - this.offsetLeft;
         var yVal = e.pageY - this.offsetTop;
@@ -312,7 +308,6 @@
                 break;
 
         }
-
 
         mouseButtonDown = true;
         startCoords = {
@@ -375,7 +370,56 @@
         unsavedChanges = true;
     }
 
-    canvas.onmouseup = function (e) {
+    function updateBoundingBox(bbNewStart, bbNewEnd, speciesId, bbid) { //todo: call this to update bounding box
+        //in case bounding box was not drawn from top left to bottom right
+        var startX = Math.min(bbNewStart.x, bbNewEnd.x);
+        var endX = Math.max(bbNewStart.x, bbNewEnd.x);
+        var startY = Math.min(bbNewStart.y, bbNewEnd.y);
+        var endY = Math.max(bbNewStart.y, bbNewEnd.y);
+
+        var updatedBB = {index: bbid, start: {x: startX, y: startY}, end: {x: endX, y: endY}};
+
+        var updateDiv = document.getElementById("divBB" + bbid);
+
+        updateDiv.innerHTML = "";
+
+        // display bounding box image
+        var newimg = document.createElement("canvas");
+        newimg.id = "bbImage" + bbid;
+        newimg.width = endX - startX;
+        newimg.height = endY - startY;
+        var newctx = newimg.getContext('2d');
+        newctx.drawImage(img,
+            startX, // where to start clipping
+            startY, // where to start clipping
+            endX - startX, // width
+            endY - startY, // height
+            0, // where to place image on canvas
+            0, // where to place image on canvas
+            endX - startX, // width
+            endY - startY); // height
+        updateDiv.appendChild(newimg);
+
+        var speciesDropdown = document.createElement("select");
+        speciesDropdown.onchange = function (e) {
+            unsavedChanges = true;
+        };
+        speciesJson.forEach(function (species) {
+            var opt = document.createElement("option");
+            opt.value = species.speciesId;
+            opt.text = species.description;
+            if (opt.value == speciesId) {
+                opt.selected = true;
+            }
+            speciesDropdown.options.add(opt);
+        });
+        speciesDropdown.id = "bbSpecies" + boundingBoxes.length;
+        updateDiv.appendChild(speciesDropdown);
+
+
+    }
+
+    canvas.onmouseup = function (e) {  //todo: edit here for #5
         'use strict';
         mouseButtonDown = false;
 
