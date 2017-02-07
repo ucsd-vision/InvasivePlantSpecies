@@ -32,16 +32,28 @@ Click on a point to see panorama data and to edit the panorama.
             center: uluru
         });
 
-        jsonPanos.forEach(function (pano) {
+        var markers = jsonPanos.map(function (panorama, i) {
+            return new google.maps.Marker({
+                position: panorama,
+                label: i
+            })
+        });
+
+        var markerCluster = new MarkerClusterer(map, markers,
+            {imagePath: 'GoogleResources/m'})
+
+        /*jsonPanos.forEach(function (pano) {
             var panoMarker = new google.maps.Marker({
                 position: {lat: pano.lat, lng: pano.lng},
                 map: map
             })
-        });
+         });*/
     }
 </script>
 <script async defer
         src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBUTckKb884QoQ1qaan9dxI-I1jx70Amb8&callback=initMap">
+</script>
+<script src="GoogleResources/markerclusterer.js">
 </script>
 </body>
 </html>
