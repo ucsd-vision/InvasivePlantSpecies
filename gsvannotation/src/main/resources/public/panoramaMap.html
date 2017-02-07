@@ -11,9 +11,10 @@
 </head>
 <body>
 <h3>Existing Panoramas</h3>
-All existing panoramas are displayed on the map below.
+All existing panoramas are displayed on the map below.<br>
 Click on a point to see panorama data and to edit the panorama.
 <div id="map"></div>
+<li><a href="index.html">Return to index</a></li>
 <script>
 
     var jsonPanos;
@@ -26,17 +27,24 @@ Click on a point to see panorama data and to edit the panorama.
         xobj.send();
         jsonPanos = JSON.parse(xobj.responseText);
 
+        var mapCenter = {lat: 0, lng: 0};
+
         var markers = jsonPanos.map(function (panorama, i) {
-            return new google.maps.Marker({
+            mapCenter.lat += panorama.lat / jsonPanos.length;
+            mapCenter.lng += panorama.lng / jsonPanos.length;
+
+            var marker = new google.maps.Marker({
                 position: panorama,
-                label: '' + (i + 1)
-            })
+                title: 'id: ' + panorama.panoramaId
+            });
+
+
+            return marker;
         });
 
-        var uluru = {lat: jsonPanos[0].lat, lng: jsonPanos[0].lng};
         var map = new google.maps.Map(document.getElementById('map'), {
-            zoom: 4,
-            center: uluru
+            zoom: 5,
+            center: mapCenter
         });
 
         var markerCluster = new MarkerClusterer(map, markers,
