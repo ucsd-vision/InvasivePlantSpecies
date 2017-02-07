@@ -26,28 +26,21 @@ Click on a point to see panorama data and to edit the panorama.
         xobj.send();
         jsonPanos = JSON.parse(xobj.responseText);
 
+        var markers = jsonPanos.map(function (panorama, i) {
+            return new google.maps.Marker({
+                position: panorama,
+                label: '' + (i + 1)
+            })
+        });
+
         var uluru = {lat: jsonPanos[0].lat, lng: jsonPanos[0].lng};
         var map = new google.maps.Map(document.getElementById('map'), {
             zoom: 4,
             center: uluru
         });
 
-        var markers = jsonPanos.map(function (panorama, i) {
-            return new google.maps.Marker({
-                position: panorama,
-                label: i
-            })
-        });
-
         var markerCluster = new MarkerClusterer(map, markers,
-            {imagePath: 'GoogleResources/m'})
-
-        /*jsonPanos.forEach(function (pano) {
-            var panoMarker = new google.maps.Marker({
-                position: {lat: pano.lat, lng: pano.lng},
-                map: map
-            })
-         });*/
+            {imagePath: 'GoogleResources/m'});
     }
 </script>
 <script async defer
