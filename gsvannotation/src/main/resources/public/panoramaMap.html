@@ -33,11 +33,19 @@ Click on a point to see panorama data and to edit the panorama.
             mapCenter.lat += panorama.lat / jsonPanos.length;
             mapCenter.lng += panorama.lng / jsonPanos.length;
 
-            var marker = new google.maps.Marker({
-                position: panorama,
-                title: 'id: ' + panorama.panoramaId
+            var panoramaContentString = '';
+
+            var infoWindow = new google.maps.InfoWindow({
+                content: panoramaContentString
             });
 
+            var marker = new google.maps.Marker({
+                position: panorama,
+                title: panorama.description
+            });
+            marker.addListener('click', function () {
+                infoWindow.open(map, marker);
+            });
 
             return marker;
         });
