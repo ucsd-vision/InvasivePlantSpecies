@@ -112,25 +112,97 @@
     // global (page scope) variables
     var canvas = document.getElementById('canvPano');
     var ctx = canvas.getContext('2d');
-    var mouse = {x: 0, y: 0}; //make an object to hold mouse position
-    var startCoords = {x: 0, y: 0};
-    var last = {x: 0, y: 0};
-    var panoOffset = {x: 0, y: 0};
+    var bbStart = {x: 0, y: 0}; // defines bounding box start position
+    var bbEnd = {x:0, y:0};  // defines bounding box end position
+    var panoOffset = {x: 0, y: 0}; // panorama image offset within canvas
+    var mouseDownPosition = {x: 0, y:0}; // position of mouse within canvas when mouse goes down
+    var currentMousePosition = {x: 0, y: 0};
 
     var mouseButtonDown = false;
     // canvas mouse input mode
-    var modesEnum = {"None": 0, "Pan": 1, "BoundingBox": 2}
-    var mode = modesEnum.None;
+    var modesEnum = {"Select": 0, "Pan": 1, "BoundingBox": 2}
+    var mode = modesEnum.Select;
 
     // holds all bounding boxes
     var boundingBoxes = [];
 
     var selectedBBIndex = -1;
+    var resizingBBIndex = -1; //to store which bounding box is being resized
 
+    canvas.onmousedown = function (e) { //todo: needs to be modified
+        'use strict';
+        // get mouse position within canvas
+        // e.pageX and e.pageY are mouse coordinates within the entire window
+        var xVal = e.pageX - this.offsetLeft;
+        var yVal = e.pageY - this.offsetTop;
+        mouseDownPosition = {x: xVal, y: yVal};
 
+        switch (mode) {
+            case modesEnum.Select:
+                findBoundingBox(xVal, yVal);
+                break;
+            case modesEnum.Pan:
+
+                break;
+
+            case modesEnum.BoundingBox:
+              bbStart = mouseDownPosition;
+              break;
+        }
+
+        mouseButtonDown = true;
+    };
+    
+    canvas.onmousemove = function (e) { //todo: this method will need to be modified
+        'use strict';
+        // get mouse position within canvas
+        // e.pageX and e.pageY are mouse coordinates within the entire window
+        var xVal = e.pageX - this.offsetLeft,
+            yVal = e.pageY - this.offsetTop;
+        currentMousePosition = {x: xVal, y: yVal};
+
+        if (mode == modesEnum.Pan) {
+            if (mouseButtonDown) {
+                panoOffset.x = currentMousePosition.x - mouseDownPosition.x;
+                panoOffset.y = currentMousePosition.x - mouseDownPostition.x;
+                
+                updateDisplay();
+            }
+        } else if (mode == modesEnum.BoundingBox) {
+            updateDisplay();
+            if (mouseButtonDown) {
+                bbEnd = {x: xVal - last.x, y: yVal - last.y};
+                drawRectangle(bbStart, bbEnd, "#FF0000");
+            } else {
+                drawCrosshairs(currentMousePosition.x, currentMousePosition.y);
+            }
+        }
+    };
+
+    canvas.onmouseup = function (e) {  //todo: edit here for #5
+        'use strict';
+        mouseButtonDown = false;
+        // get mouse position within canvas
+        // e.pageX and e.pageY are mouse coordinates within the entire window
+        var xVal = e.pageX - this.offsetLeft,
+            yVal = e.pageY - this.offsetTop;
+        currentMousePosition = {x: xVal, y: yVal};
+
+        switch (mode) {
+            case modesEnum.Select:
+                break;
+            case modesEnum.Pan:
+                break;
+            case modesEnum.BoundingBox:
+              bbEnd = currentMousePosition;
+              addBoundingBox(bbStart, bbEnd);
+              defaultMode();
+              break;
+        }
+    };
     function updateDisplay() {
         switch (mode) {
-            case modesEnum.None:
+            case modesEnum.Select:
                 canvas.style.cursor = "";
                 document.getElementById("divStatus").innerHTML = "Select mode";
                 break;
@@ -144,40 +216,11 @@
                 break;
         }
 
-        if (selectedBBIndex == -1) {
-            document.getElementById("deleteBB").disabled = true;
-        } else {
-            document.getElementById("deleteBB").disabled = false;
-        }
+        document.getElementById("deleteBB").disabled = selectedBBIndex == -1;
 
         render();
     }
 
-    function deleteBB() {
-        if (selectedBBIndex != -1) {
-            boundingBoxes.splice(selectedBBIndex, 1);
-        }
-        document.getElementById("divBoundingBoxes")
-            .removeChild(document.getElementById("divBB" + selectedBBIndex));
-
-        selectedBBIndex = -1;
-        updateDisplay();
-    }
-
-    function defaultMode() {
-        mode = modesEnum.None;
-        updateDisplay();
-    }
-
-    function panningMode() {
-        mode = modesEnum.Pan;
-        updateDisplay();
-    }
-
-    function bbMode() {
-        mode = modesEnum.BoundingBox;
-        updateDisplay();
-    }
 
     function render() {
 
@@ -236,38 +279,6 @@
             end.x - start.x, end.y - start.y);
     }
 
-    canvas.onmousemove = function (e) {
-        'use strict';
-        var xVal = e.pageX - this.offsetLeft,
-            yVal = e.pageY - this.offsetTop;
-        mouse = {
-            x: e.pageX,
-            y: e.pageY
-        };
-
-        if (mode == modesEnum.Pan) {
-            if (mouseButtonDown) {
-                panoOffset.x = xVal - startCoords.x;
-                panoOffset.y = yVal - startCoords.y;
-                if (panoOffset.x < -(img.width - canvas.width)) {
-                    panoOffset.x += img.width;
-                }
-                if (panoOffset.x > img.width) {
-                    panoOffset.x -= img.width;
-                }
-                updateDisplay();
-            }
-        } else if (mode == modesEnum.BoundingBox) {
-            updateDisplay();
-            if (mouseButtonDown) {
-                var endCoords = {x: xVal - last.x, y: yVal - last.y};
-                drawRectangle(startCoords, endCoords, "#FF0000");
-            } else {
-                drawCrosshairs(xVal - last.x, yVal - last.y);
-            }
-        }
-    };
-
     function drawBoundingBoxes() {
         for (var i = 0; i < boundingBoxes.length; ++i) {
             var style = "#00FF00";
@@ -280,7 +291,7 @@
         }
     }
 
-    function findBoundingBox(x, y) {
+    function findBoundingBox(x, y) { //todo: this method will be useful
         x -= panoOffset.x;
         y -= panoOffset.y;
         selectedBBIndex = -1;
@@ -296,36 +307,6 @@
 
     }
 
-    canvas.onmousedown = function (e) {
-        'use strict';
-        var xVal = e.pageX - this.offsetLeft;
-        var yVal = e.pageY - this.offsetTop;
-
-        mouse = {
-            x: e.pageX,
-            y: e.pageY
-        };
-
-        switch (mode) {
-            case modesEnum.None:
-                findBoundingBox(xVal, yVal);
-                break;
-            case modesEnum.Pan:
-
-                break;
-
-            case modesEnum.BoundingBox:
-                break;
-
-        }
-
-
-        mouseButtonDown = true;
-        startCoords = {
-            x: e.pageX - this.offsetLeft - last.x,
-            y: e.pageY - this.offsetTop - last.y
-        };
-    };
 
     function addBoundingBox(bbStart, bbEnd, speciesId) {
         var bbid = boundingBoxes.length;
@@ -381,34 +362,54 @@
         unsavedChanges = true;
     }
 
-    canvas.onmouseup = function (e) {
-        'use strict';
-        mouseButtonDown = false;
+    function updateBoundingBox(bbNewStart, bbNewEnd, speciesId, bbid) { //todo: call this to update bounding box
+        //in case bounding box was not drawn from top left to bottom right
+        var startX = Math.min(bbNewStart.x, bbNewEnd.x);
+        var endX = Math.max(bbNewStart.x, bbNewEnd.x);
+        var startY = Math.min(bbNewStart.y, bbNewEnd.y);
+        var endY = Math.max(bbNewStart.y, bbNewEnd.y);
 
-        switch (mode) {
-            case modesEnum.None:
-                break;
-            case modesEnum.Pan:
-                last = {
-                    x: e.pageX - this.offsetLeft - startCoords.x,
-                    y: e.pageY - this.offsetTop - startCoords.y
-                };
-                if (last.x > img.width) {
-                    last.x -= img.width;
-                }
-                if (last.x < -(img.width - canvas.width)) {
-                    last.x += img.width;
-                }
-                console.debug("pano x: " + panoOffset.x + " y: " + panoOffset.y);
-                console.debug("last: " + last.x);
-                break;
-            case modesEnum.BoundingBox:
-                var endCoords = {x: e.pageX - this.offsetLeft - last.x, y: e.pageY - this.offsetTop - last.y};
-                addBoundingBox(startCoords, endCoords);
-                defaultMode();
-                break;
-        }
-    };
+        var updatedBB = {index: bbid, start: {x: startX, y: startY}, end: {x: endX, y: endY}};
+
+        var updateDiv = document.getElementById("divBB" + bbid);
+
+        updateDiv.innerHTML = "";
+
+        // display bounding box image
+        var newimg = document.createElement("canvas");
+        newimg.id = "bbImage" + bbid;
+        newimg.width = endX - startX;
+        newimg.height = endY - startY;
+        var newctx = newimg.getContext('2d');
+        newctx.drawImage(img,
+            startX, // where to start clipping
+            startY, // where to start clipping
+            endX - startX, // width
+            endY - startY, // height
+            0, // where to place image on canvas
+            0, // where to place image on canvas
+            endX - startX, // width
+            endY - startY); // height
+        updateDiv.appendChild(newimg);
+
+        var speciesDropdown = document.createElement("select");
+        speciesDropdown.onchange = function (e) {
+            unsavedChanges = true;
+        };
+        speciesJson.forEach(function (species) {
+            var opt = document.createElement("option");
+            opt.value = species.speciesId;
+            opt.text = species.description;
+            if (opt.value == speciesId) {
+                opt.selected = true;
+            }
+            speciesDropdown.options.add(opt);
+        });
+        speciesDropdown.id = "bbSpecies" + boundingBoxes.length;
+        updateDiv.appendChild(speciesDropdown);
+
+
+    }
 
     function save() {
         var saveButton = document.getElementById("btnSave");
@@ -443,6 +444,33 @@
         unsavedChanges = false;
         window.location.assign("/panoramas.html");
     }
+    
+    function deleteBB() {
+        if (selectedBBIndex != -1) {
+            boundingBoxes.splice(selectedBBIndex, 1);
+        }
+        document.getElementById("divBoundingBoxes")
+            .removeChild(document.getElementById("divBB" + selectedBBIndex));
+
+        selectedBBIndex = -1;
+        updateDisplay();
+    }
+
+    function defaultMode() {
+        mode = modesEnum.Select;
+        updateDisplay();
+    }
+
+    function panningMode() {
+        mode = modesEnum.Pan;
+        updateDisplay();
+    }
+
+    function bbMode() {
+        mode = modesEnum.BoundingBox;
+        updateDisplay();
+    }
+    
 </script>
 </body>
 </html>
