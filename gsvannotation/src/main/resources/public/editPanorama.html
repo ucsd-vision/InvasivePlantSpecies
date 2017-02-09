@@ -115,6 +115,7 @@
     var bbStart = {x: 0, y: 0}; // defines bounding box start position
     var bbEnd = {x:0, y:0};  // defines bounding box end position
     var panoOffset = {x: 0, y: 0}; // panorama image offset within canvas
+    var lastPanoOffset = {x: 0, y:0 };
     var mouseDownPosition = {x: 0, y:0}; // position of mouse within canvas when mouse goes down
     var currentMousePosition = {x: 0, y: 0};
 
@@ -151,6 +152,7 @@
         }
 
         mouseButtonDown = true;
+        console.debug("mouseDownPosition: ("+mouseDownPosition.x+","+mouseDownPosition.y+")");
     };
     
     canvas.onmousemove = function (e) { //todo: this method will need to be modified
@@ -163,18 +165,19 @@
 
         if (mode == modesEnum.Pan) {
             if (mouseButtonDown) {
-                panoOffset.x = currentMousePosition.x - mouseDownPosition.x;
-                panoOffset.y = currentMousePosition.x - mouseDownPostition.x;
-                
+                panoOffset.x = lastPanoOffset.x + (currentMousePosition.x - mouseDownPosition.x);
+                panoOffset.y = lastPanoOffset.y + (currentMousePosition.y - mouseDownPosition.y);
+
                 updateDisplay();
             }
         } else if (mode == modesEnum.BoundingBox) {
             updateDisplay();
             if (mouseButtonDown) {
-                bbEnd = {x: xVal - last.x, y: yVal - last.y};
+                bbEnd = {x: xVal - panoOffset.x, y: yVal - panoOffset.y};
                 drawRectangle(bbStart, bbEnd, "#FF0000");
             } else {
-                drawCrosshairs(currentMousePosition.x, currentMousePosition.y);
+                drawCrosshairs(currentMousePosition.x-panoOffset.x, 
+                		currentMousePosition.y-panoOffset.y);
             }
         }
     };
@@ -187,11 +190,20 @@
         var xVal = e.pageX - this.offsetLeft,
             yVal = e.pageY - this.offsetTop;
         currentMousePosition = {x: xVal, y: yVal};
-
         switch (mode) {
             case modesEnum.Select:
                 break;
             case modesEnum.Pan:
+                if( panoOffset.x > canvas.width ) {
+                	panoOffset.x -= img.width;
+                	//mouseDownPosition.x -= (img.width-canvas.width);
+                } else if( panoOffset.x < -(img.width - canvas.width) ) {
+                	panoOffset.x += img.width;
+                }
+                console.debug(currentMousePosition.x+","+currentMousePosition.y+" "+mouseDownPosition.x+","+mouseDownPosition.y+" "+
+                		lastPanoOffset.x+","+lastPanoOffset.y);            	
+        		lastPanoOffset.x = panoOffset.x;
+        		lastPanoOffset.y = panoOffset.y;
                 break;
             case modesEnum.BoundingBox:
               bbEnd = currentMousePosition;
