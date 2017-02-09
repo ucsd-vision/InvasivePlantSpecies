@@ -35,14 +35,15 @@ public class Main {
 	}
 	
 	public static void main(String[] args) {
-		if( args.length != 4 ) {
-			System.out.println("usage: java -jar gsvannotation.jar [dbhost] [dbusername] [dbpassword] [dbport]");
+		if( args.length != 5 ) {
+			System.out.println("usage: java -jar gsvannotation.jar [dbhost] [dbusername] [dbpassword] [dbport] [webport]");
 			return;
 		}
 		String dbhost = args[0];
 		String dbusername = args[1];
 		String dbpassword = args[2];
 		String dbport = args[3];
+		String webport = args[4];
 		
 	    Sql2o sql2o = new Sql2o("jdbc:mysql://" + dbhost + ":" + dbport + "/invasivespecies", 
 	            dbusername, dbpassword);
@@ -58,6 +59,8 @@ public class Main {
 		
 		// for static html/css/js files
 		staticFileLocation("/public");
+		
+		port(Integer.parseInt( webport ) );
 		
 		get("/getPano", (request, response) -> {
 			
