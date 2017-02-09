@@ -147,7 +147,7 @@
                 break;
 
             case modesEnum.BoundingBox:
-              bbStart = mouseDownPosition;
+              bbStart = {x: xVal - panoOffset.x, y: yVal-panoOffset.y};
               break;
         }
 
@@ -206,7 +206,8 @@
         		lastPanoOffset.y = panoOffset.y;
                 break;
             case modesEnum.BoundingBox:
-              bbEnd = currentMousePosition;
+              bbEnd = {x: currentMousePosition.x - panoOffset.x, 
+            		y: currentMousePosition.y - panoOffset.y};
               addBoundingBox(bbStart, bbEnd);
               defaultMode();
               break;
