@@ -5,7 +5,7 @@
     <title>Map of Existing Panoramas</title>
     <style>
         #map {
-            height: 400px;
+            height: 640px;
             width: 100%;
         }
     </style>
@@ -16,7 +16,7 @@ All existing panoramas are displayed on the map below.<br>
 Click on a point to see panorama data and to edit the panorama.
 <div id="map"></div>
 <li><a href="index.html">Return to index</a></li>
-<script>
+<script >
 
     var jsonPanos;
 
@@ -109,10 +109,10 @@ Click on a point to see panorama data and to edit the panorama.
             {imagePath: 'GoogleResources/m'});
     }
 </script>
+<script src="GoogleResources/markerclusterer.js"></script>
+
 <script async defer
         src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBUTckKb884QoQ1qaan9dxI-I1jx70Amb8&callback=initMap">
-</script>
-<script src="GoogleResources/markerclusterer.js">
 </script>
 </body>
 </html>
