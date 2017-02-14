@@ -13,12 +13,17 @@
 <body>
 <h3>Existing Panoramas</h3>
 All existing panoramas are displayed on the map below.<br>
-Click on a point to see panorama data and to edit the panorama.
+Click on a point to see panorama data and to edit the panorama, or right click a point to create a panorama at that
+point.
 <div id="map"></div>
+<div id="status"></div>
 <li><a href="index.html">Return to index</a></li>
 <script >
 
     var jsonPanos;
+    var status = document.getElementById("status");
+    status.innerHTML = "Preparing Map";
+    var creatingPano = false;
 
     function initMap() {
 
@@ -107,6 +112,33 @@ Click on a point to see panorama data and to edit the panorama.
 
         var markerCluster = new MarkerClusterer(map, markers,
             {imagePath: 'GoogleResources/m'});
+
+        map.addListener('rightclick', function (e) {
+            latlng2pano(e.latLng.lat(), e.latLng.lng())
+        });
+
+        status.innerHTML = "Map Ready";
+    }
+
+    function latlng2pano(lat, lng) {
+        creatingPano = true;
+
+        status.innerHTML = "Attempting to create panorama at right click location...";
+
+        var xobj = new XMLHttpRequest();
+        xobj.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                if (this.responseText != "") {
+                    var panoramaId = this.responseText;
+                    window.location.assign("editPanorama.html?panoramaId=" + panoramaId);
+                } else {
+                    status.innerHTML = "Failed to create pano at right click location";
+                    creatingPano = false;
+                }
+            }
+        };
+        xobj.open('GET', '/latlng2pano?lat=' + lat + '&lng=' + lng, true);
+        xobj.send();
     }
 </script>
 <script src="GoogleResources/markerclusterer.js"></script>
