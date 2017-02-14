@@ -104,7 +104,7 @@ def download_full_pano_image(pano, zoom=None, key=None, api='javascript', out_di
               continue
         try:
           tile = Image.open(StringIO(data))
-          if not out_dir is None: tile.save(fname)
+          #if not out_dir is None: tile.save(fname)
         except:
           print "IOError reading image " + fname + " in download_full_pano_image()"
           open(full_name+'.bad', 'a').close()
