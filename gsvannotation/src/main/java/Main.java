@@ -125,8 +125,10 @@ public class Main {
 			double lat = Double.parseDouble(request.queryParams("lat"));
 			double lng = Double.parseDouble(request.queryParams("lng"));
 			Panorama pano = latlng2pano(lat,  lng);
+                        // Check to see if a panorama exists for this lat/lng
 			if( pano != null ) {
-				if( model.getPanorama(pano.getPanoramaId()) == null ) {
+				// Checks to see if panorama is already in database
+                                if( model.getPanorama(pano.getPanoramaId()) == null ) {
 					model.insertPanorama(pano);
 				}
 				return pano.getPanoramaId();
