@@ -14,7 +14,12 @@
 <h3>Existing Panoramas</h3>
 All existing panoramas are displayed on the map below.<br>
 Click on a point to see panorama data and to edit the panorama, or right click a point to create a panorama at that
-point.
+point. <br>
+Filter by Species:
+<select id="speciesFilter">
+    <option value="-1">All</option>
+</select>
+
 <div id="map"></div>
 <div id="status"></div>
 <li><a href="index.html">Return to index</a></li>
@@ -24,6 +29,10 @@ point.
     var status = document.getElementById("status");
     status.innerHTML = "Preparing Map";
     var creatingPano = false;
+    var markerCluster;
+    var speciesIdMap = {};
+
+    var mapReady = false;
 
     function initMap() {
 
@@ -38,10 +47,23 @@ point.
         xobjSpecies.send();
         speciesJson = JSON.parse(xobjSpecies.responseText);
 
-        var speciesIdMap = {};
-
         speciesJson.forEach(function (species) {
             speciesIdMap[species.speciesId] = species.description;
+        });
+
+        var speciesDropdown = document.getElementById("speciesFilter");
+        speciesDropdown.onchange = function (e) {
+            status.innerHTML = 'changing species displayed';
+            speciesToDisplay = speciesDropdown.value;
+            clearPanos();
+            displayPanos();
+            status.innerHTML = 'species displayed updated';
+        };
+        speciesJson.forEach(function (species) {
+            var opt = document.createElement("option");
+            opt.value = species.speciesId;
+            opt.text = species.description;
+            speciesDropdown.options.add(opt);
         });
 
         var mapCenter = {lat: 0, lng: 0};
@@ -110,7 +132,7 @@ point.
             center: mapCenter
         });
 
-        var markerCluster = new MarkerClusterer(map, markers,
+        markerCluster = new MarkerClusterer(map, markers,
             {imagePath: 'GoogleResources/m'});
 
         map.addListener('rightclick', function (e) {
@@ -118,6 +140,82 @@ point.
         });
 
         status.innerHTML = "Map Ready";
+        mapReady = true;
+    }
+
+    function clearPanos() {
+        if (mapReady) {
+            markerCluster.clearMarkers();
+        }
+    }
+
+    function displayPanos() {
+        if (mapReady) {
+            var xobj = new XMLHttpRequest();
+            xobj.overrideMimeType("application/json");
+            xobj.open('GET', '/getPanosBySpeciesId?speciesId=' + speciesToDisplay, false);
+            xobj.send();
+            jsonPanos = JSON.parse(xobj.responseText);
+
+            var markers = jsonPanos.map(function (panorama) {
+
+                var panoramaContentString = '<table border="1" cellspacing=0 cellpadding=0>' +
+                    '<thead> <tr> <th>Pano Id</th> <th>Lat,Lng</th> <th>Description</th> ' +
+                    '<th>Region</th> <th>Country</th> <th>Bounding Boxes</th> <th></th> </tr> </thead>' +
+                    '<tbody> ';
+
+                var boxes = panorama.boundingBoxes;
+                var speciesNumber = {};
+
+                boxes.forEach(function (box) {
+                    var speciesDescription = speciesIdMap[box.speciesId];
+                    if (speciesNumber[speciesDescription] == null) {
+                        speciesNumber[speciesDescription] = 0;
+                    }
+                    speciesNumber[speciesDescription]++;
+                });
+
+                var boundingBoxString = "Total: " + panorama.boundingBoxes.length;
+
+                for (var description in speciesNumber) {
+                    boundingBoxString += "<br/>" + description + ": " + speciesNumber[description];
+                }
+
+                panoramaContentString += "<td>" + panorama.panoramaId + "</td><td>" + panorama.lat + ", " + panorama.lng + "</td>" +
+                    "<td>" + panorama.description + "</td>" +
+                    "<td>" + panorama.region + "</td>" +
+                    "<td>" + panorama.country + "</td>" +
+                    "<td>" + boundingBoxString + "</td>" +
+                    "<td><a href='editPanorama.html?panoramaId=" + panorama.panoramaId + "'>edit</a></td>";
+
+                panoramaContentString += '</tbody> </table>';
+
+                var infoWindow = new google.maps.InfoWindow({
+                    content: panoramaContentString
+                });
+
+                var marker = new google.maps.Marker({
+                    position: panorama,
+                    title: panorama.description
+                });
+
+                if (panorama.boundingBoxes.length == 0) {
+                    marker.setIcon('http://maps.google.com/mapfiles/ms/icons/green-dot.png');
+                } else if (panorama.boundingBoxes.length <= 3) {
+                    marker.setIcon('http://maps.google.com/mapfiles/ms/icons/blue-dot.png');
+                } else {
+                    marker.setIcon('http://maps.google.com/mapfiles/ms/icons/red-dot.png');
+                }
+
+                marker.addListener('click', function () {
+                    infoWindow.open(map, marker);
+                });
+
+                return marker;
+            });
+
+            markerCluster.addMarkers(markers);
+        }
     }
 
     function latlng2pano(lat, lng) {
