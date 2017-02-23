@@ -1,0 +1,91 @@
+<html>
+<head>
+    <title>Invasive species annotation tool</title>
+</head>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+      integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+<style>
+canvas {
+	margin: 5px;
+}
+</style>
+
+<body>
+<div><a href="index.html">Back to index</a></div>
+
+Filter by Species:
+<select id="speciesFilter">
+    <option value="-1">Select a species</option>
+</select>
+
+<div id="boundingboxes">
+</div>
+
+<script type="text/javascript">
+var xobjSpecies = new XMLHttpRequest();
+xobjSpecies.open('GET', '/getAllSpecies', false); //synchronous call
+xobjSpecies.send();
+speciesJson = JSON.parse(xobjSpecies.responseText);
+
+var speciesIdMap = {};
+
+speciesJson.forEach(function (species) {
+    speciesIdMap[species.speciesId] = species.description;
+});
+
+var speciesDropdown = document.getElementById("speciesFilter");
+speciesJson.forEach(function (species) {
+    var opt = document.createElement("option");
+    opt.value = species.speciesId;
+    opt.text = species.description;
+    speciesDropdown.options.add(opt);
+});
+
+speciesDropdown.onchange = function( e ) {
+	var speciesId = speciesDropdown.value;
+	document.getElementById("boundingboxes").innerHTML="";
+	if( speciesId != -1 ) {
+		var xobj = new XMLHttpRequest();
+		xobj.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+            	var panosJson = JSON.parse( this.responseText );
+            	panosJson.forEach( function( pano )  {
+            		var img = new Image();
+            		img.src = "pano_images/"+pano['panoramaId']+'_z3.jpg';
+            		img.onload = function() {
+                		pano.boundingBoxes.forEach( function( bb ) {
+                			if( bb.speciesId == speciesId ) {
+                				var startX = bb.topLeftX;
+                				var startY = bb.topLeftY;
+                				var endX = bb.bottomRightX;
+                				var endY = bb.bottomRightY;
+                		        // display bounding box image
+                		        var newimg = document.createElement("canvas");
+                		        newimg.width = endX - startX;
+                		        newimg.height = endY - startY;
+                		        var newctx = newimg.getContext('2d');
+                		        newctx.drawImage(img,
+                		            startX, // where to start clipping
+                		            startY, // where to start clipping
+                		            endX - startX, // width
+                		            endY - startY, // height
+                		            0, // where to place image on canvas
+                		            0, // where to place image on canvas
+                		            endX - startX, // width
+                		            endY - startY); // height
+                		        document.getElementById("boundingboxes").appendChild(newimg);            				
+                			}
+                		});
+            		}
+            	});
+            }			
+		};
+		xobj.open('GET', '/getPanosBySpeciesId?speciesId='+speciesId, true);
+		xobj.send();
+	}
+}
+</script>
+
+</body>
+</html>
