@@ -29,6 +29,7 @@ Filter by Species:
     var status = document.getElementById("status");
     status.innerHTML = "Preparing Map";
     var creatingPano = false;
+    var btn;
     var markerCluster;
     var speciesIdMap = {};
 
@@ -135,8 +136,23 @@ Filter by Species:
         markerCluster = new MarkerClusterer(map, markers,
             {imagePath: 'GoogleResources/m'});
 
+        var rightClickInfoWindow = new google.maps.InfoWindow({});
+        btn = document.createElement("input");
+        btn.type = "button";
+        btn.value = "Create panorama here";
         map.addListener('rightclick', function (e) {
-            latlng2pano(e.latLng.lat(), e.latLng.lng())
+            if (!creatingPano) {
+                btn.value = "Create panorama";
+                btn.disabled = false;
+                btn.onclick = function () {
+                    btn.value = "Attempting to creating panorama...";
+                    btn.disabled = true;
+                    latlng2pano(e.latLng.lat(), e.latLng.lng());
+                };
+                rightClickInfoWindow.setContent(btn);
+                rightClickInfoWindow.setPosition(e.latLng);
+                rightClickInfoWindow.open(map);
+            }
         });
 
         status.innerHTML = "Map Ready";
@@ -230,7 +246,9 @@ Filter by Species:
                     var panoramaId = this.responseText;
                     window.location.assign("editPanorama.html?panoramaId=" + panoramaId);
                 } else {
-                    status.innerHTML = "Failed to create pano at right click location";
+                    status.innerHTML = "Failed to create panorama at right click location";
+                    btn.value = "Failed to create panorama!";
+                    btn.disabled = true;
                     creatingPano = false;
                 }
             }
