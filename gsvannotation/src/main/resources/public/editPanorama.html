@@ -143,6 +143,7 @@
 
     // holds all bounding boxes
     var boundingBoxes = [];
+    var nextBoundingBoxIndex = 0;
 
     var selectedBBIndex = -1;
     var resizingBBIndex = -1; //to store which bounding box is being resized
@@ -346,7 +347,8 @@
     }
 
     function addBoundingBox(bbStart, bbEnd, speciesId) {
-        var bbid = boundingBoxes.length;
+        var bbid = nextBoundingBoxIndex;
+        nextBoundingBoxIndex++;
         // in case bounding box was not drawn from top left to bottom right
         var startX = Math.min(bbStart.x, bbEnd.x);
         var endX = Math.max(bbStart.x, bbEnd.x);
@@ -390,7 +392,7 @@
             }
             speciesDropdown.options.add(opt);
         });
-        speciesDropdown.id = "bbSpecies" + boundingBoxes.length;
+        speciesDropdown.id = "bbSpecies" + bbid;
         newdiv.appendChild(speciesDropdown);
 
         bbdiv.appendChild(newdiv);
