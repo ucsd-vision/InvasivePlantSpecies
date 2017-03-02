@@ -34,6 +34,10 @@
 
 <div>
     <h3>Bounding boxes</h3>
+    <div id="divUpdateBoundingBoxes">
+        <input type="button" id="buttonUpdateAll" onclick="updateAllBoundingBoxes();"
+               value="Update all bounding boxes' species to: ">
+    </div>
     <div id="divBoundingBoxes"></div>
 </div>
 <div>
@@ -107,6 +111,19 @@
     };
     xobj.open('GET', '/getPano?panoramaId=' + urlParams.panoramaId, true);
     xobj.send();
+
+
+    var divSpecies = document.getElementById("divUpdateBoundingBoxes");
+    var speciesDropdown = document.createElement("select");
+    speciesJson.forEach(function (species) {
+        var opt = document.createElement("option");
+        opt.value = species.speciesId;
+        opt.text = species.description;
+
+        speciesDropdown.options.add(opt);
+    });
+    speciesDropdown.id = "speciesUpdateAll";
+    divSpecies.appendChild(speciesDropdown);
 
 
     // global (page scope) variables
@@ -320,6 +337,13 @@
 
     }
 
+    function updateAllBoundingBoxes() {
+        var newSpeciesValue = document.getElementById("speciesUpdateAll").value;
+
+        boundingBoxes.forEach(function (bb, index) {
+            document.getElementById("bbSpecies" + bb.index).value = newSpeciesValue;
+        });
+    }
 
     function addBoundingBox(bbStart, bbEnd, speciesId) {
         var bbid = boundingBoxes.length;
