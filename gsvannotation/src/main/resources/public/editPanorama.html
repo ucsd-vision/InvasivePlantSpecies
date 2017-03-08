@@ -372,16 +372,51 @@
         newimg.width = endX - startX;
         newimg.height = endY - startY;
         var newctx = newimg.getContext('2d');
-        newctx.drawImage(img,
-            startX, // where to start clipping
-            startY, // where to start clipping
-            endX - startX, // width
-            endY - startY, // height
-            0, // where to place image on canvas
-            0, // where to place image on canvas
-            endX - startX, // width
-            endY - startY); // height
-        newdiv.appendChild(newimg);
+        
+        // correct for negative coordinates when panning
+        if( startX < 0 ) {
+        	startX = img.width+startX;
+        }
+        if( endX < 0 ) {
+        	endX = img.width+endX;
+        }
+        
+    	// handle the case where bounding box spans across panorama border
+        if( startX > endX ) {
+            newctx.drawImage(img,
+                    startX, // where to start clipping
+                    startY, // where to start clipping
+                    img.width - startX, // width
+                    endY - startY, // height
+                    0, // where to place image on canvas
+                    0, // where to place image on canvas
+                    img.width-startX, // width
+                    endY - startY); // height
+            newctx.drawImage( img, 
+                    0, // where to start clipping
+                    startY, // where to start clipping
+                    endX, // width
+                    endY - startY, // height
+                    img.width-startX, // x coordinate where to place image on canvas
+                    0, // y coordinate where to place image on canvas
+                    endX, // width
+                    endY - startY); // height
+            		
+            newdiv.appendChild(newimg);
+        	
+        } else {
+        	
+            newctx.drawImage(img,
+                    startX, // where to start clipping
+                    startY, // where to start clipping
+                    endX - startX, // width
+                    endY - startY, // height
+                    0, // where to place image on canvas
+                    0, // where to place image on canvas
+                    endX - startX, // width
+                    endY - startY); // height
+                newdiv.appendChild(newimg);
+        }
 
         var speciesDropdown = document.createElement("select");
         speciesDropdown.onchange = function (e) {
