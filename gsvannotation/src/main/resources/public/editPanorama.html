@@ -138,7 +138,7 @@
 
     var mouseButtonDown = false;
     // canvas mouse input mode
-    var modesEnum = {"Select": 0, "Pan": 1, "BoundingBox": 2}
+    var modesEnum = {"Select": 0, "Pan": 1, "BoundingBox": 2};
     var mode = modesEnum.Select;
 
     // holds all bounding boxes
@@ -147,6 +147,8 @@
 
     var selectedBBIndex = -1;
     var resizingBBIndex = -1; //to store which bounding box is being resized
+
+    var lastSpecies;
 
     canvas.onmousedown = function (e) { //todo: needs to be modified
         'use strict';
@@ -226,7 +228,7 @@
             case modesEnum.BoundingBox:
               bbEnd = {x: currentMousePosition.x - panoOffset.x, 
             		y: currentMousePosition.y - panoOffset.y};
-              addBoundingBox(bbStart, bbEnd);
+                addBoundingBox(bbStart, bbEnd, lastSpecies);
               defaultMode();
               break;
         }
@@ -344,6 +346,8 @@
         boundingBoxes.forEach(function (bb, index) {
             document.getElementById("bbSpecies" + bb.index).value = newSpeciesValue;
         });
+
+        lastSpecies = newSpeciesValue;
     }
 
     function addBoundingBox(bbStart, bbEnd, speciesId) {
@@ -381,6 +385,7 @@
 
         var speciesDropdown = document.createElement("select");
         speciesDropdown.onchange = function (e) {
+            lastSpecies = e.currentTarget.value;
             unsavedChanges = true;
         };
         speciesJson.forEach(function (species) {
@@ -397,6 +402,8 @@
 
         bbdiv.appendChild(newdiv);
         boundingBoxes.push(newbb);
+
+        lastSpecies = speciesId;
 
         unsavedChanges = true;
     }
