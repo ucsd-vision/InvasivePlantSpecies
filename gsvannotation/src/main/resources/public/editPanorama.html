@@ -42,8 +42,11 @@
 </div>
 <div>
     <input type="button" value="Save" onclick="save()" id="btnSave"/>
-    <input type="button" value="Cancel" onclick="cancel()" id="btnCancel"/>
+    <input type="button" value="Edit next panorama" onclick="editNext()" id="btnEditNext" />
+    <input type="button" value="Delete and edit next panorama" onclick="deleteAndEditNext()" id="btnDelete" />
+    <input type="button" value="Cancel" onclick="cancel()" id="btnCancel"/><span id="saveStatus" style="margin:5px"	></span>
 </div>
+<a href="index.html">Return to index</a>
 <script type="text/javascript">
     // warn the user if they try to leave the page without saving
     var unsavedChanges = false;
@@ -494,6 +497,7 @@
 
     function save() {
         var saveButton = document.getElementById("btnSave");
+        document.getElementById("saveStatus").innerHTML="";
         saveButton.disabled = true;
         saveButton.value = "Saving...";
         // put in format back end will understand
@@ -513,12 +517,54 @@
         xobj.setRequestHeader("Content-Type", "application/json");
         xobj.onreadystatechange = function () {
             if (this.readyState == 4 && this.status == 200) {
-                saveButton.value = "Done";
+                saveButton.value = "Save";
+                document.getElementById("saveStatus").innerHTML="Changes saved";
+                saveButton.disabled=false;
                 unsavedChanges = false;
-                window.location.assign("/panoramas.html");
             }
         };
         xobj.send(json);
+    }
+    
+    function editNext() {
+    	var editButton = document.getElementById("btnEditNext");
+    	editButton.disabled=true;
+
+    	// see if there is another panorama to edit
+    	var xobj = new XMLHttpRequest();
+    	xobj.open("GET", "/findUnannotatedPanorama");
+    	xobj.onreadystatechange = function() {
+    		if( this.readyState == 4 && this.status == 200 ) {
+    			if( this.responseText != "" ) {
+    				var panoramaId = this.responseText;
+    				window.location.assign("editPanorama.html?panoramaId=" + panoramaId);
+    			} else {
+    				document.getElementById("saveStatus").innerHTML = "No unannotated panoramas found";
+    			}
+    		}
+    	}
+    	xobj.send();
+    }
+    
+    function deleteAndEditNext() {
+    	var deleteButton = document.getElementById("btnDelete");
+    	deleteButton.disabled=true;
+    	
+    	if( confirm("Are you sure you want to delete this panorama? This action cannot be undone.") ) {
+    		document.getElementById("saveStatus").innerHTML = "Deleting...";
+    		var xobj = new XMLHttpRequest();
+        	xobj.open("DELETE", "/deletePanorama?panoramaId="+urlParams.panoramaId);
+        	xobj.onreadystatechange = function() {
+        		if( this.readyState == 4 && this.status == 200 ) {
+        			document.getElementById("btnSave").disabled=true;
+        			deleteButton.value="Panorama deleted";
+        			editNext();
+        		}
+        	}
+        	xobj.send();
+    	} else {
+        	deleteButton.disabled=false;
+    	}
     }
 
     function cancel() {

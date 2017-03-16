@@ -171,6 +171,7 @@ public class Sql2oModel implements Model {
 		}
 	}
 
+	//TODO: get rid of this class, just add bb count to Species
 	public static class SpeciesAndBoundingBoxCount extends Species {
 		private int boundingBoxCount;
 
@@ -185,5 +186,29 @@ public class Sql2oModel implements Model {
 		public void setBoundingBoxCount(int boundingBoxCount) {
 			this.boundingBoxCount = boundingBoxCount;
 		}
+	}
+
+	@Override
+	public void deletePanorama(String panoramaId) {
+		try ( Connection conn = sql2o.beginTransaction() ) {
+			conn.createQuery("delete from bounding_box where panorama_panoramaId = :id")
+				.addParameter("id",  panoramaId).executeUpdate();
+			conn.createQuery("delete from panorama where panoramaId = :id")
+				.addParameter("id",  panoramaId).executeUpdate();
+			conn.commit();
+		}		
+	}
+	
+	@Override
+	public String findUnannotatedPanorama() {
+		String panoramaId = "";
+		try( Connection conn = sql2o.open() ) {
+			panoramaId = conn.createQuery("select p.panoramaId from panorama p where p.panoramaId not in (select panorama_panoramaId from bounding_box)")
+				.executeScalar(String.class);
+			if( panoramaId == null ) {
+				panoramaId = "";
+			}
+		}
+		return panoramaId;
 	}
 }

@@ -157,5 +157,15 @@ public class Main {
 
 		get("getNumberOfBoundingBoxesPerSpecies", (request, response)
 				-> jsonMapper.writeValueAsString(model.getNumberOfBoundingBoxesPerSpecies()));
+		
+		get("findUnannotatedPanorama", (request, response) -> {
+			return model.findUnannotatedPanorama();
+		});
+		
+		delete("deletePanorama", (request, response) -> {
+			String panoramaId = request.queryParams("panoramaId");
+			model.deletePanorama(panoramaId);
+			return "";
+		});
 	}
 }
