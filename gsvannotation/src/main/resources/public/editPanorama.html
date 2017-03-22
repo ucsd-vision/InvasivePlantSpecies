@@ -362,54 +362,57 @@
         var startY = Math.min(bbStart.y, bbEnd.y);
         var endY = Math.max(bbStart.y, bbEnd.y);
 
-        var newbb = {index: bbid, start: {x: startX, y: startY}, end: {x: endX, y: endY}};
+        var zeroDimension = 5;
 
-        // add bounding box to page
-        var bbdiv = document.getElementById("divBoundingBoxes");
+        if (endX - startX > zeroDimension && endY - startY > zeroDimension) { // ensure that bounding boxes with length or width 0 get added
+            var newbb = {index: bbid, start: {x: startX, y: startY}, end: {x: endX, y: endY}};
 
-        var newdiv = document.createElement("div");
-        newdiv.id = "divBB" + bbid;
+            // add bounding box to page
+            var bbdiv = document.getElementById("divBoundingBoxes");
 
-        // display bounding box image
-        var newimg = document.createElement("canvas");
-        newimg.width = endX - startX;
-        newimg.height = endY - startY;
-        var newctx = newimg.getContext('2d');
-        
-        // correct for negative coordinates when panning
-        if( startX < 0 ) {
-        	startX = img.width+startX;
-        }
-        if( endX < 0 ) {
-        	endX = img.width+endX;
-        }
-        
-    	// handle the case where bounding box spans across panorama border
-        if( startX > endX ) {
-            newctx.drawImage(img,
+            var newdiv = document.createElement("div");
+            newdiv.id = "divBB" + bbid;
+
+            // display bounding box image
+            var newimg = document.createElement("canvas");
+            newimg.width = endX - startX;
+            newimg.height = endY - startY;
+            var newctx = newimg.getContext('2d');
+
+            // correct for negative coordinates when panning
+            if (startX < 0) {
+                startX = img.width + startX;
+            }
+            if (endX < 0) {
+                endX = img.width + endX;
+            }
+
+            // handle the case where bounding box spans across panorama border
+            if (startX > endX) {
+                newctx.drawImage(img,
                     startX, // where to start clipping
                     startY, // where to start clipping
                     img.width - startX, // width
                     endY - startY, // height
                     0, // where to place image on canvas
                     0, // where to place image on canvas
-                    img.width-startX, // width
+                    img.width - startX, // width
                     endY - startY); // height
-            newctx.drawImage( img, 
+                newctx.drawImage(img,
                     0, // where to start clipping
                     startY, // where to start clipping
                     endX, // width
                     endY - startY, // height
-                    img.width-startX, // x coordinate where to place image on canvas
+                    img.width - startX, // x coordinate where to place image on canvas
                     0, // y coordinate where to place image on canvas
                     endX, // width
                     endY - startY); // height
-            		
-            newdiv.appendChild(newimg);
-        	
-        } else {
-        	
-            newctx.drawImage(img,
+
+                newdiv.appendChild(newimg);
+
+            } else {
+
+                newctx.drawImage(img,
                     startX, // where to start clipping
                     startY, // where to start clipping
                     endX - startX, // width
@@ -419,31 +422,50 @@
                     endX - startX, // width
                     endY - startY); // height
                 newdiv.appendChild(newimg);
-        }
-
-        var speciesDropdown = document.createElement("select");
-        speciesDropdown.onchange = function (e) {
-            lastSpecies = e.currentTarget.value;
-            unsavedChanges = true;
-        };
-        speciesJson.forEach(function (species) {
-            var opt = document.createElement("option");
-            opt.value = species.speciesId;
-            opt.text = species.description;
-            if (opt.value == speciesId) {
-                opt.selected = true;
             }
-            speciesDropdown.options.add(opt);
-        });
-        speciesDropdown.id = "bbSpecies" + bbid;
-        newdiv.appendChild(speciesDropdown);
 
-        bbdiv.appendChild(newdiv);
-        boundingBoxes.push(newbb);
+            var speciesDropdown = document.createElement("select");
+            speciesDropdown.onchange = function (e) {
+                lastSpecies = e.currentTarget.value;
+                unsavedChanges = true;
+            };
+            speciesJson.forEach(function (species) {
+                var opt = document.createElement("option");
+                opt.value = species.speciesId;
+                opt.text = species.description;
+                if (opt.value == speciesId) {
+                    opt.selected = true;
+                }
+                speciesDropdown.options.add(opt);
+            });
+            speciesDropdown.id = "bbSpecies" + bbid;
+            newdiv.appendChild(speciesDropdown);
 
-        lastSpecies = speciesId;
+            var deleteButton = document.createElement("input");
+            deleteButton.type = "button";
+            deleteButton.value = "Delete bounding box";
+            deleteButton.onclick = function () {
+                selectedBBIndex = -1;
+                for (var i = 0; i < boundingBoxes.length; i++) {
+                    if (bbid == boundingBoxes[i].index) {
+                        selectedBBIndex = i;
+                        break;
+                    }
+                }
 
-        unsavedChanges = true;
+                deleteBB();
+
+                unsavedChanges = true;
+            };
+            newdiv.appendChild(deleteButton);
+
+            bbdiv.appendChild(newdiv);
+            boundingBoxes.push(newbb);
+
+            lastSpecies = speciesId;
+
+            unsavedChanges = true;
+        }
     }
 
     function updateBoundingBox(bbNewStart, bbNewEnd, speciesId, bbid) { //todo: call this to update bounding box
@@ -489,7 +511,7 @@
             }
             speciesDropdown.options.add(opt);
         });
-        speciesDropdown.id = "bbSpecies" + boundingBoxes.length;
+        speciesDropdown.id = "bbSpecies" + bbid;
         updateDiv.appendChild(speciesDropdown);
 
 
@@ -542,7 +564,7 @@
     				document.getElementById("saveStatus").innerHTML = "No unannotated panoramas found";
     			}
     		}
-    	}
+        };
     	xobj.send();
     }
     
@@ -560,7 +582,7 @@
         			deleteButton.value="Panorama deleted";
         			editNext();
         		}
-        	}
+            };
         	xobj.send();
     	} else {
         	deleteButton.disabled=false;
@@ -574,10 +596,10 @@
     
     function deleteBB() {
         if (selectedBBIndex != -1) {
+            document.getElementById("divBoundingBoxes")
+                .removeChild(document.getElementById("divBB" + boundingBoxes[selectedBBIndex].index));
             boundingBoxes.splice(selectedBBIndex, 1);
         }
-        document.getElementById("divBoundingBoxes")
-            .removeChild(document.getElementById("divBB" + selectedBBIndex));
 
         selectedBBIndex = -1;
         updateDisplay();
