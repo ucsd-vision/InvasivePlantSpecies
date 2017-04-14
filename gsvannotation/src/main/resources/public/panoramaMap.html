@@ -74,8 +74,8 @@ Filter by Species:
             mapCenter.lng += panorama.lng / jsonPanos.length;
 
             var panoramaContentString = '<table border="1" cellspacing=0 cellpadding=0>' +
-                '<thead> <tr> <th>Pano Id</th> <th>Lat,Lng</th> <th>Description</th> ' +
-                '<th>Region</th> <th>Country</th> <th>Bounding Boxes</th> <th></th> </tr> </thead>' +
+                '<thead> <tr> <th>Pano Id</th> <th>Lat,Lng</th> <th>Image Date</th> <th>Description</th> ' +
+                '<th>Region</th> <th>Bounding Boxes</th> <th></th> </tr> </thead>' +
                 '<tbody> ';
 
             var boxes = panorama.boundingBoxes;
@@ -96,11 +96,11 @@ Filter by Species:
             }
 
             panoramaContentString += "<td>" + panorama.panoramaId + "</td><td>" + panorama.lat + ", " + panorama.lng + "</td>" +
-                "<td>" + panorama.description + "</td>" +
+                "<td>" + panorama.gsvImageDate + "</td>" +
+            	"<td>" + panorama.description + "</td>" +
                 "<td>" + panorama.region + "</td>" +
-                "<td>" + panorama.country + "</td>" +
                 "<td>" + boundingBoxString + "</td>" +
-                "<td><a href='editPanorama.html?panoramaId=" + panorama.panoramaId + "'>edit</a></td>";
+                "<td><a target='_blank' href='editPanorama.html?panoramaId=" + panorama.panoramaId + "'>edit</a></td>";
 
             panoramaContentString += '</tbody> </table>';
 
