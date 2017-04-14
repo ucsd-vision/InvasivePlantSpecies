@@ -30,10 +30,9 @@
         <thead>
         <tr>
             <th>Pano Id</th>
-            <th>Lat,Lng</th>
+            <th>Species from iMap</th>
             <th>Description</th>
             <th>Region</th>
-            <th>Country</th>
             <th>Bounding Boxes</th>
             <th></th>
         </tr>
@@ -126,10 +125,10 @@
                 }
 
                 var newrow = document.createElement("tr");
-                newrow.innerHTML = "<td>" + pano.panoramaId + "</td><td>" + pano.lat + ", " + pano.lng + "</td>" +
+                newrow.innerHTML = "<td>" + pano.panoramaId + "</td>"+
+                	"<td>" + speciesIdMap[pano.imapSpeciesId]+"</td>"+
                     "<td>" + pano.description + "</td>" +
                     "<td>" + pano.region + "</td>" +
-                    "<td>" + pano.country + "</td>" +
                     "<td>" + boundingBoxString + "</td>" +
                     "<td><a href='editPanorama.html?panoramaId=" + pano.panoramaId + "'>edit</a></td>";
 

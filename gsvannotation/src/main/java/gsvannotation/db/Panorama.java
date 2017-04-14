@@ -1,5 +1,6 @@
 package gsvannotation.db;
 
+import java.util.Date;
 import java.util.List;
 
 public class Panorama {
@@ -11,6 +12,9 @@ public class Panorama {
 	private String description;
 	private String region;
 	private String country;
+	private Date gsvImageDate;
+	private int imapSpeciesId;
+	private boolean noInvasives; /// a flag indicating no invasive plants found in this panorama
 	
 	public String getDescription() {
 		return description;
@@ -60,5 +64,24 @@ public class Panorama {
 	public void setImage(String image) {
 		this.image = image;
 	}
+	public Date getGsvImageDate() {
+		return gsvImageDate;
+	}
+	public void setGsvImageDate(Date gsvDate) {
+		this.gsvImageDate = gsvDate;
+	}
+	public int getImapSpeciesId() {
+		return imapSpeciesId;
+	}
+	public void setImapSpeciesId(int imapSpeciesId) {
+		this.imapSpeciesId = imapSpeciesId;
+	}
+	public boolean getNoInvasives() {
+		return noInvasives;
+	}
+	public void setNoInvasives(boolean noInvasives) {
+		this.noInvasives = noInvasives;
+	}
+	
 }
 

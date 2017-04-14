@@ -6,7 +6,8 @@ import java.util.Map;
 public interface Model {
 	Panorama getPanorama(String panoId);
 	void insertPanorama(Panorama pano);
-	void updatePanoramaBoundingBoxes(Panorama pano);
+	void updatePanorama(Panorama pano);
+	
 	List<Panorama> getAllPanos();
 	List<Panorama> getPanosBySpeciesId(int speciesId);
 	void deletePanorama(String panoramaId);

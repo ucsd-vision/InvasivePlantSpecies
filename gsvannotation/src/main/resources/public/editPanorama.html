@@ -27,9 +27,12 @@
 </div>
 <div>
     <h3>Panorama Details</h3>
+    <b>Species from iMAP: </b> <span id="panoImapSpecies"></span>
+    <b>Google Image Date: </b> <span id="panoImageDate"></span><br />
+    <b>(Lat/Lon): </b> <span id="panoLatLon"></span>
     <b>Description: </b><span id=panoDescription></span>
-    <b>Region: </b><span id="panoRegion"></span>
-    <b>Country: </b><span id="panoCountry"></span>
+    <b>Region: </b><span id="panoRegion"></span><br />
+    <input type="checkbox" id="panoNoInvasives" onchange="unsavedChanges=true;"/> No invasive plant species in this panorama
 </div>
 
 <div>
@@ -43,7 +46,7 @@
 <div>
     <input type="button" value="Save" onclick="save()" id="btnSave"/>
     <input type="button" value="Edit next panorama" onclick="editNext()" id="btnEditNext" />
-    <input type="button" value="Delete and edit next panorama" onclick="deleteAndEditNext()" id="btnDelete" />
+    <!-- <input type="button" value="Delete and edit next panorama" onclick="deleteAndEditNext()" id="btnDelete" /> -->
     <input type="button" value="Cancel" onclick="cancel()" id="btnCancel"/><span id="saveStatus" style="margin:5px"	></span>
 </div>
 <a href="index.html">Return to index</a>
@@ -70,6 +73,30 @@
             urlParams[decode(match[1])] = decode(match[2]);
     })();
 
+    // global (page scope) variables
+    var canvas = document.getElementById('canvPano');
+    var ctx = canvas.getContext('2d');
+    var bbStart = {x: 0, y: 0}; // defines bounding box start position
+    var bbEnd = {x:0, y:0};  // defines bounding box end position
+    var panoOffset = {x: 0, y: 0}; // panorama image offset within canvas
+    var lastPanoOffset = {x: 0, y:0 };
+    var mouseDownPosition = {x: 0, y:0}; // position of mouse within canvas when mouse goes down
+    var currentMousePosition = {x: 0, y: 0};
+
+    var mouseButtonDown = false;
+    // canvas mouse input mode
+    var modesEnum = {"Select": 0, "Pan": 1, "BoundingBox": 2};
+    var mode = modesEnum.Select;
+
+    // holds all bounding boxes
+    var boundingBoxes = [];
+    var nextBoundingBoxIndex = 0;
+
+    var selectedBBIndex = -1;
+    var resizingBBIndex = -1; //to store which bounding box is being resized
+
+    var lastSpecies;
+    
 
     var statusDiv = document.getElementById("divStatus");
     statusDiv.innerHTML = "checking for panorama image, please wait...";
@@ -106,9 +133,17 @@
             statusDiv.innerHTML = "";
             panoObj = JSON.parse(this.responseText);
             img.src = "pano_images/" + urlParams.panoramaId + "_z3.jpg";
+            document.getElementById("panoLatLon").innerHTML = "(" + panoObj.lat + ","+panoObj.lng+")";
             document.getElementById("panoDescription").innerHTML = panoObj.description;
             document.getElementById("panoRegion").innerHTML = panoObj.region;
-            document.getElementById("panoCountry").innerHTML = panoObj.country;
+            document.getElementById("panoImageDate").innerHTML = panoObj.gsvImageDate;
+            speciesJson.forEach(function (species) {
+            	if( species.speciesId == panoObj.imapSpeciesId ) {
+                    document.getElementById("panoImapSpecies").innerHTML = species.description;
+            	}
+            });
+            lastSpecies = panoObj.imapSpeciesId;
+            document.getElementById("panoNoInvasives").checked = (panoObj.noInvasives==1);
             updateDisplay();
         }
     };
@@ -129,29 +164,6 @@
     divSpecies.appendChild(speciesDropdown);
 
 
-    // global (page scope) variables
-    var canvas = document.getElementById('canvPano');
-    var ctx = canvas.getContext('2d');
-    var bbStart = {x: 0, y: 0}; // defines bounding box start position
-    var bbEnd = {x:0, y:0};  // defines bounding box end position
-    var panoOffset = {x: 0, y: 0}; // panorama image offset within canvas
-    var lastPanoOffset = {x: 0, y:0 };
-    var mouseDownPosition = {x: 0, y:0}; // position of mouse within canvas when mouse goes down
-    var currentMousePosition = {x: 0, y: 0};
-
-    var mouseButtonDown = false;
-    // canvas mouse input mode
-    var modesEnum = {"Select": 0, "Pan": 1, "BoundingBox": 2};
-    var mode = modesEnum.Select;
-
-    // holds all bounding boxes
-    var boundingBoxes = [];
-    var nextBoundingBoxIndex = 0;
-
-    var selectedBBIndex = -1;
-    var resizingBBIndex = -1; //to store which bounding box is being resized
-
-    var lastSpecies;
 
     canvas.onmousedown = function (e) { //todo: needs to be modified
         'use strict';
@@ -523,7 +535,9 @@
         saveButton.disabled = true;
         saveButton.value = "Saving...";
         // put in format back end will understand
-        var pano = {panoramaId: urlParams.panoramaId, lat: 0, lng: 0, image: "", boundingBoxes: []};
+        var pano = {panoramaId: urlParams.panoramaId, lat: 0, lng: 0, image: ""
+        		, boundingBoxes: []
+        		, noInvasives: document.getElementById("panoNoInvasives").checked};
         boundingBoxes.forEach(function (bb, index) {
             var newbb = {
                 topLeftX: bb.start.x, topLeftY: bb.start.y,

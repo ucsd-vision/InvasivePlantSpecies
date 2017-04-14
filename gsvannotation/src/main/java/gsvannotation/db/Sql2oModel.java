@@ -21,14 +21,17 @@ public class Sql2oModel implements Model {
 	@Override
 	public void insertPanorama(Panorama pano) {
 		try ( Connection conn = sql2o.beginTransaction() ) {
-			conn.createQuery("insert into panorama ( panoramaId, lat, lng, description, region, country ) " + 
-					" VALUES ( :panoramaId, :lat, :lng, :description, :region, :country ) ")
+			conn.createQuery("insert into panorama ( panoramaId, lat, lng, description, region, country, gsvImageDate, imap_species_speciesId, noInvasives ) " + 
+					" VALUES ( :panoramaId, :lat, :lng, :description, :region, :country, :gsvDate, :imap_speciesId, :noInvasives ) ")
 				.addParameter("panoramaId",  pano.getPanoramaId())
 				.addParameter("lat",  pano.getLat())
 				.addParameter("lng",  pano.getLng())
 				.addParameter("description",  pano.getDescription())
 				.addParameter("region",  pano.getRegion())
 				.addParameter("country",  pano.getCountry())
+				.addParameter("gsvDate", pano.getGsvImageDate())
+				.addParameter("imap_speciesId", pano.getImapSpeciesId())
+				.addParameter("noInvasives",  pano.getNoInvasives() )
 				.executeUpdate();
 			conn.commit();
 		}
@@ -76,7 +79,6 @@ public class Sql2oModel implements Model {
 			List<BoundingBox> boundingBoxes = conn.createQuery("select species_speciesId, topleftX, topleftY,  bottomrightX, bottomrightY " + 
 					" from bounding_box where panorama_panoramaId = :panoid")
 					.addParameter("panoid",  panoId)
-					.addColumnMapping("species_speciesId", "speciesId")
 					.executeAndFetch(BoundingBox.class);
 			return boundingBoxes;
 		}
@@ -130,7 +132,7 @@ public class Sql2oModel implements Model {
 	}
 
 	@Override
-	public void updatePanoramaBoundingBoxes(Panorama pano) {
+	public void updatePanorama(Panorama pano) {
 		try ( Connection conn = sql2o.beginTransaction() ) {
 			conn.createQuery("delete from bounding_box where panorama_panoramaId = :panoId")
 				.addParameter("panoId",  pano.getPanoramaId())
@@ -146,6 +148,11 @@ public class Sql2oModel implements Model {
 					.addParameter("brY",  bb.getBottomRightY())
 					.executeUpdate();
 			}
+			
+			conn.createQuery("update panorama set noInvasives = :noInvasives where panoramaId= :panoramaId")
+				.addParameter("panoramaId",  pano.getPanoramaId() )
+				.addParameter("noInvasives",  pano.getNoInvasives() )
+				.executeUpdate();
 			conn.commit();
 		}
 		
@@ -203,7 +210,9 @@ public class Sql2oModel implements Model {
 	public String findUnannotatedPanorama() {
 		String panoramaId = "";
 		try( Connection conn = sql2o.open() ) {
-			panoramaId = conn.createQuery("select p.panoramaId from panorama p where p.panoramaId not in (select panorama_panoramaId from bounding_box)")
+			panoramaId = conn.createQuery("select p.panoramaId from panorama p "+
+					"where p.panoramaId not in (select panorama_panoramaId from bounding_box) " +
+					" and p.noInvasives=0")
 				.executeScalar(String.class);
 			if( panoramaId == null ) {
 				panoramaId = "";

@@ -25,6 +25,13 @@ def get_pano_lat_lng(pano, method=None):
   elif method == 'original': return float(pano['Location']['original_lat']), float(pano['Location']['original_lng'])
   elif method == 'average': return (float(pano['Location']['lat'])+float(pano['Location']['original_lat']))/2.0, (float(pano['Location']['lng'])+float(pano['Location']['original_lng']))/2.0
 
+def get_pano( panoid ):
+  url = 'https://cbks0.googleapis.com/cbk?output=json&oe=utf-8&panoid=' + panoid + '&dm=0&pm=0&cb_client=apiv3&v=4&hl=en-US&gl=US'
+  response = urllib2.urlopen(url)
+  data = response.read()
+  pano = json.loads(data)
+  return pano
+  
 # Find the closest streetview panorama to a user specified latitude and longitude.  Returns various info
 # about this panorama, such as the camera latitude/longitude, the panorama id, etc.
 def get_nearest_pano(latitude, longitude, radius=50, rank='closest', key=None, get_depth_map=False, get_pano_map=False, panos=None, method=None):

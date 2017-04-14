@@ -1,5 +1,5 @@
 #import japanese knotweet (jk)
-
+from street_view import *
 from subprocess import call
 import urllib2
 import utm
@@ -29,5 +29,17 @@ for line in lines:
   print url
   #call(["wget", url])
   f = urllib2.urlopen( url )
-  print f.read()
+  panoId = f.read()
+  print panoId
+  if panoId=='none':
+    continue  
+  pano = get_pano( panoId )
+  if pano.has_key('Links'):
+    linksRetrieved = 0
+    for panoLink in pano['Links']:
+	  url = 'http://localhost:4567/panoId2pano?panoId='+panoLink['panoId']+'&imapSpeciesId=2'
+	  print url
+	  f = urllib2.urlopen( url )
+	  print f.read()
+	  
 

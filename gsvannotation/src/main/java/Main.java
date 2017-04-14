@@ -8,7 +8,10 @@ import org.sql2o.Sql2o;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
+import java.text.SimpleDateFormat;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static spark.Spark.*;
@@ -24,10 +27,37 @@ public class Main {
 			
 			// for converting POJOs to json
 			ObjectMapper jsonMapper = new ObjectMapper();
+			jsonMapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd"));
 			String json = stdInput.lines().collect(Collectors.joining());
+			if( json.contains("none") ) {
+				return null;
+			} else {
+				Panorama pano = jsonMapper.readValue(json,  Panorama.class);
+				return pano;
+			}
+		} catch( Exception e ) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
+	public static Panorama panoId2pano(String panoId) {
+		try {
+			Process p = Runtime.getRuntime().exec("python src/main/python/panoId2pano.py " +panoId);
+			p.waitFor();
 			
-			Panorama pano = jsonMapper.readValue(json,  Panorama.class);
-			return pano;
+			BufferedReader stdInput = new BufferedReader( new InputStreamReader( p.getInputStream() ));
+			
+			// for converting POJOs to json
+			ObjectMapper jsonMapper = new ObjectMapper();
+			jsonMapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd"));
+			String json = stdInput.lines().collect(Collectors.joining());
+			if( json.contains("none") ) {
+				return null;
+			} else {
+				Panorama pano = jsonMapper.readValue(json,  Panorama.class);
+				return pano;
+			}
 		} catch( Exception e ) {
 			e.printStackTrace();
 			return null;
@@ -47,6 +77,12 @@ public class Main {
 		
 	    Sql2o sql2o = new Sql2o("jdbc:mysql://" + dbhost + ":" + dbport + "/invasivespecies", 
 	            dbusername, dbpassword);
+	    
+	    // these column mappings get applied to all queries
+	    Map<String,String> columnMaps = new HashMap<String,String>();
+	    columnMaps.put("imap_species_speciesId", "imapSpeciesId");
+	    columnMaps.put("species_speciesId", "speciesId");
+	    sql2o.setDefaultColumnMappings(columnMaps);
 
 		Model model = new Sql2oModel(sql2o);
 
@@ -100,7 +136,7 @@ public class Main {
 		post("/savePano", (request, response) -> {
 			String body = request.body();
 			Panorama pano = jsonMapper.readValue(body,  Panorama.class);
-			model.updatePanoramaBoundingBoxes( pano );
+			model.updatePanorama( pano );
 			response.status(200);
 			return "ok";
 		});
@@ -124,19 +160,44 @@ public class Main {
 			return jsonMapper.writeValueAsString( species );
 		});
 		
+		get("panoId2pano", (request, response) -> {
+			String panoId = request.queryParams("panoId");
+			Panorama pano = panoId2pano(panoId);
+			if( pano!= null ) {
+				if( request.queryParams().contains("imapSpeciesId") ) {
+					pano.setImapSpeciesId( Integer.parseInt( request.queryParams("imapSpeciesId") ));
+				} else {
+					pano.setImapSpeciesId(1); // default to phrag
+				}
+				// Checks to see if panorama is already in database
+                if( model.getPanorama(pano.getPanoramaId()) == null ) {
+					model.insertPanorama(pano);
+				}
+				return pano.getPanoramaId();
+			} else {
+				return "none";
+			}
+		});
+		
 		get("/latlng2pano", (request, response) -> {
 			double lat = Double.parseDouble(request.queryParams("lat"));
 			double lng = Double.parseDouble(request.queryParams("lng"));
 			Panorama pano = latlng2pano(lat,  lng);
                         // Check to see if a panorama exists for this lat/lng
+
 			if( pano != null ) {
+				if( request.queryParams().contains("imapSpeciesId") ) {
+					pano.setImapSpeciesId( Integer.parseInt( request.queryParams("imapSpeciesId") ));
+				} else {
+					pano.setImapSpeciesId(1); // default to phrag
+				}
 				// Checks to see if panorama is already in database
-                                if( model.getPanorama(pano.getPanoramaId()) == null ) {
+                if( model.getPanorama(pano.getPanoramaId()) == null ) {
 					model.insertPanorama(pano);
 				}
 				return pano.getPanoramaId();
 			} else {
-				return "";
+				return "none";
 			}
 		});
 
