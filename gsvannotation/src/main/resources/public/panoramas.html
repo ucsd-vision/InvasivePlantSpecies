@@ -31,6 +31,7 @@
         <tr>
             <th>Pano Id</th>
             <th>Species from iMap</th>
+            <th>Image date</th>
             <th>Description</th>
             <th>Region</th>
             <th>Bounding Boxes</th>
@@ -127,6 +128,7 @@
                 var newrow = document.createElement("tr");
                 newrow.innerHTML = "<td>" + pano.panoramaId + "</td>"+
                 	"<td>" + speciesIdMap[pano.imapSpeciesId]+"</td>"+
+                	"<td>" + pano.gsvImageDate +"</td>" +
                     "<td>" + pano.description + "</td>" +
                     "<td>" + pano.region + "</td>" +
                     "<td>" + boundingBoxString + "</td>" +
