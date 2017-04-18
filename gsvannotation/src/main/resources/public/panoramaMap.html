@@ -15,7 +15,7 @@
 All existing panoramas are displayed on the map below.<br>
 Click on a point to see panorama data and to edit the panorama, or right click a point to create a panorama at that
 point. <br>
-Filter by Species:
+Filter by iMap Species:
 <select id="speciesFilter">
     <option value="-1">All</option>
 </select>
@@ -169,7 +169,7 @@ Filter by Species:
         if (mapReady) {
             var xobj = new XMLHttpRequest();
             xobj.overrideMimeType("application/json");
-            xobj.open('GET', '/getPanosBySpeciesId?speciesId=' + speciesToDisplay, false);
+            xobj.open('GET', '/getPanosByIMapSpeciesId?speciesId=' + speciesToDisplay, false);
             xobj.send();
             jsonPanos = JSON.parse(xobj.responseText);
 
