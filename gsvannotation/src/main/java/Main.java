@@ -201,7 +201,7 @@ public class Main {
 			}
 		});
 
-		get("getPanosBySpeciesId", (request, response) -> {
+		get("getPanosByIMapSpeciesId", (request, response) -> {
 			String idString = request.queryParams("speciesId");
 			int id = Integer.parseInt(idString);
 
@@ -210,7 +210,7 @@ public class Main {
 			if (id == -1) {
 				panoramas = model.getAllPanos();
 			} else {
-				panoramas = model.getPanosBySpeciesId(id);
+				panoramas = model.getPanosByIMapSpeciesId(id);
 			}
 
 			return jsonMapper.writeValueAsString(panoramas);

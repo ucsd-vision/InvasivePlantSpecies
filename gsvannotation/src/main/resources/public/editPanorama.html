@@ -32,7 +32,7 @@
     <b>(Lat/Lon): </b> <span id="panoLatLon"></span>
     <b>Description: </b><span id=panoDescription></span>
     <b>Region: </b><span id="panoRegion"></span><br />
-    <input type="checkbox" id="panoNoInvasives" onchange="unsavedChanges=true;"/> No invasive plant species in this panorama
+    <input type="checkbox" id="panoNoInvasives" onchange="unsavedChanges=true;"/> Check this box if you are not able to identify any Phragmites, Japanese Knotweed, wild parsnip or purple loosestrife in this image.
 </div>
 
 <div>
@@ -44,7 +44,7 @@
     <div id="divBoundingBoxes"></div>
 </div>
 <div>
-    <input type="button" value="Save" onclick="save()" id="btnSave"/>
+    <input type="button" value="Save" onclick="savePanorama()" id="btnSave"/>
     <input type="button" value="Edit next panorama" onclick="editNext()" id="btnEditNext" />
     <!-- <input type="button" value="Delete and edit next panorama" onclick="deleteAndEditNext()" id="btnDelete" /> -->
     <input type="button" value="Cancel" onclick="cancel()" id="btnCancel"/><span id="saveStatus" style="margin:5px"	></span>
@@ -529,7 +529,7 @@
 
     }
 
-    function save() {
+    function savePanorama() {
         var saveButton = document.getElementById("btnSave");
         document.getElementById("saveStatus").innerHTML="";
         saveButton.disabled = true;
@@ -557,6 +557,13 @@
                 document.getElementById("saveStatus").innerHTML="Changes saved";
                 saveButton.disabled=false;
                 unsavedChanges = false;
+                
+                // update window opener if opened from panoramas listing page
+                if( window.opener != null ) {
+                	if( window.opener.document.getElementById("bbtable") != null ) {
+                		window.opener.updatePanoramaRow(urlParams.panoramaId);
+                	}
+                }
             }
         };
         xobj.send(json);

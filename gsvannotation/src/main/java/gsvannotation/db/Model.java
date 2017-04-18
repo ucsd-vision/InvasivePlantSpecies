@@ -9,7 +9,7 @@ public interface Model {
 	void updatePanorama(Panorama pano);
 	
 	List<Panorama> getAllPanos();
-	List<Panorama> getPanosBySpeciesId(int speciesId);
+	List<Panorama> getPanosByIMapSpeciesId(int speciesId);
 	void deletePanorama(String panoramaId);
 	String findUnannotatedPanorama();
 

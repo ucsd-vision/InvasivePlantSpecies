@@ -21,7 +21,7 @@
 </div>
 <div>
     <h2>Existing panos</h2>
-    Filter by Species:
+    Filter by Species from iMap:
     <select id="speciesFilter">
         <option value="-1">All</option>
     </select>
@@ -96,44 +96,77 @@
         xobj.open('GET', '/latlng2pano?lat=' + lat + '&lng=' + lng, true);
         xobj.send();
     }
+    
+    var lastPanoramaIdEdit;
+    
+    function getPanoramaRowHtml(panoObj) {
+        var boxes = panoObj.boundingBoxes;
+        var speciesNumber = {};
 
+        boxes.forEach(function (box) {
+            var speciesDescription = speciesIdMap[box.speciesId];
+            if (speciesNumber[speciesDescription] == null) {
+                speciesNumber[speciesDescription] = 0;
+            }
+            speciesNumber[speciesDescription]++;
+        });
+
+        var boundingBoxString = "Total: " + panoObj.boundingBoxes.length;
+
+        for (var description in speciesNumber) {
+            boundingBoxString += "<br/>" + description + ": " + speciesNumber[description];
+        }
+
+        var panoRowHtml = "<td>" + panoObj.panoramaId + "</td>"+
+    	"<td>" + speciesIdMap[panoObj.imapSpeciesId]+"</td>"+
+    	"<td>" + panoObj.gsvImageDate +"</td>" +
+        "<td>" + panoObj.description + "</td>" +
+        "<td>" + panoObj.region + "</td>" +
+        "<td>" + boundingBoxString + "</td>" +
+        "<td><a target='_blank' onclick='lastPanoramaIdEdit=\""+panoObj.panoramaId+"\"; return true;' href='editPanorama.html?panoramaId=" + panoObj.panoramaId + "'>edit</a></td>";
+        
+        return panoRowHtml;
+    }
+    
+    function updatePanoramaRow( panoramaId ) {
+		console.log( "panoramaId: " + panoramaId );    	
+    	var xobj = new XMLHttpRequest();
+    	xobj.overrideMimeType("application/json");
+        xobj.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                if (this.responseText != "") {
+                    var panoObj = JSON.parse(this.responseText);
+                    var trPano = document.getElementById("pano_tr_"+panoramaId);
+                    trPano.innerHTML = getPanoramaRowHtml(panoObj);
+                    if( panoObj.noInvasives == true ) {
+                    	trPano.bgColor="#F6DDCC";
+                    } else { 
+                    	trPano.bgColor="";
+                    }
+                }
+            }
+        };
+    	xobj.open('GET', '/getPano?panoramaId='+panoramaId, true );
+    	xobj.send();
+    }
+    
     function displayPanos() {
 
         var xobj = new XMLHttpRequest();
         xobj.overrideMimeType("application/json");
-        xobj.open('GET', '/getPanosBySpeciesId?speciesId='+speciesToDisplay, false);
+        xobj.open('GET', '/getPanosByIMapSpeciesId?speciesId='+speciesToDisplay, false);
         xobj.send();
         jsonPanos = JSON.parse(xobj.responseText);
 
 
         jsonPanos.forEach(function (pano) {
-            if (hasSpecies(pano)) {
-                var boxes = pano.boundingBoxes;
-                var speciesNumber = {};
-
-                boxes.forEach(function (box) {
-                    var speciesDescription = speciesIdMap[box.speciesId];
-                    if (speciesNumber[speciesDescription] == null) {
-                        speciesNumber[speciesDescription] = 0;
-                    }
-                    speciesNumber[speciesDescription]++;
-                });
-
-                var boundingBoxString = "Total: " + pano.boundingBoxes.length;
-
-                for (var description in speciesNumber) {
-                    boundingBoxString += "<br/>" + description + ": " + speciesNumber[description];
-                }
-
+            if ( speciesToDisplay == -1 || pano.imapSpeciesId == speciesToDisplay ) {
                 var newrow = document.createElement("tr");
-                newrow.innerHTML = "<td>" + pano.panoramaId + "</td>"+
-                	"<td>" + speciesIdMap[pano.imapSpeciesId]+"</td>"+
-                	"<td>" + pano.gsvImageDate +"</td>" +
-                    "<td>" + pano.description + "</td>" +
-                    "<td>" + pano.region + "</td>" +
-                    "<td>" + boundingBoxString + "</td>" +
-                    "<td><a target='_blank' href='editPanorama.html?panoramaId=" + pano.panoramaId + "'>edit</a></td>";
-
+                newrow.id="pano_tr_"+pano.panoramaId;
+                if( pano.noInvasives == true ) {
+                	newrow.bgColor="#F6DDCC";
+                }
+                newrow.innerHTML = getPanoramaRowHtml(pano);
                 document.getElementById("bbtable").tBodies[0].appendChild(newrow);
             }
         });
@@ -144,20 +177,22 @@
         t.tBodies[0].innerHTML = "";
     }
 
-    function hasSpecies(pano) {
+    // Currently unused, will use it if requested
+    // this function returns true if the panorama has a bounding box of a specified speciesId
+    function hasBoundingBoxFilterSpecies(pano) {
         if (speciesToDisplay == -1) {
             return true;
         }
 
-        var hasSpecies = false;
+        var hasFilterSpecies = false;
         var boxes = pano.boundingBoxes;
         boxes.forEach(function (box) {
             if (box.speciesId == speciesToDisplay) {
-                hasSpecies = true;
+                hasFilterSpecies = true;
             }
         });
 
-        return hasSpecies;
+        return hasFilterSpecies;
     }
 </script>
 </html>
