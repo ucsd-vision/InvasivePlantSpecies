@@ -129,7 +129,6 @@
     }
     
     function updatePanoramaRow( panoramaId ) {
-		console.log( "panoramaId: " + panoramaId );    	
     	var xobj = new XMLHttpRequest();
     	xobj.overrideMimeType("application/json");
         xobj.onreadystatechange = function () {
@@ -140,6 +139,8 @@
                     trPano.innerHTML = getPanoramaRowHtml(panoObj);
                     if( panoObj.noInvasives == true ) {
                     	trPano.bgColor="#F6DDCC";
+                    } else if( panoObj.boundingBoxes.length > 0 ) {
+                    	trPano.bgColor="#D6EAF8";
                     } else { 
                     	trPano.bgColor="";
                     }
@@ -165,6 +166,8 @@
                 newrow.id="pano_tr_"+pano.panoramaId;
                 if( pano.noInvasives == true ) {
                 	newrow.bgColor="#F6DDCC";
+                } else if( pano.boundingBoxes.length > 0 ) {
+                	newrow.bgColor="#D6EAF8";
                 }
                 newrow.innerHTML = getPanoramaRowHtml(pano);
                 document.getElementById("bbtable").tBodies[0].appendChild(newrow);

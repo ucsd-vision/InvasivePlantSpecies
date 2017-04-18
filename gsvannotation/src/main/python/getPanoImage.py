@@ -2,8 +2,7 @@ from street_view import *
 
 import sys
 
-lat = sys.argv[1];
-lng = sys.argv[2];
+panoramaId = sys.argv[1]
 
-pano = get_nearest_pano(lat, lng)
+pano = get_pano( panoramaId )
 download_full_pano_image( pano, 3, None, 'javascript', 'external/pano_images')

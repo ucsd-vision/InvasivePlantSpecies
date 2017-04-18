@@ -109,7 +109,7 @@ public class Main {
 			File panoImage = new File("external/pano_images/" + panoramaId + "_z3.jpg");
 			if( !panoImage.exists() ) {
 				Process p = Runtime.getRuntime().exec("python src/main/python/getPanoImage.py " + 
-						pano.getLat() + " " + pano.getLng());
+						pano.getPanoramaId() );
 				p.waitFor();
 			}
 			String panoJson = jsonMapper.writeValueAsString(pano);
