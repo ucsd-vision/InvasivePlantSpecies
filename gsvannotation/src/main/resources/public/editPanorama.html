@@ -575,14 +575,14 @@
 
     	// see if there is another panorama to edit
     	var xobj = new XMLHttpRequest();
-    	xobj.open("GET", "/findUnannotatedPanorama");
+    	xobj.open("GET", "/findNextPanorama?currentPanoramaId="+urlParams.panoramaId );
     	xobj.onreadystatechange = function() {
     		if( this.readyState == 4 && this.status == 200 ) {
     			if( this.responseText != "" ) {
     				var panoramaId = this.responseText;
     				window.location.assign("editPanorama.html?panoramaId=" + panoramaId);
     			} else {
-    				document.getElementById("saveStatus").innerHTML = "No unannotated panoramas found";
+    				document.getElementById("saveStatus").innerHTML = "This is the last panorama";
     			}
     		}
         };

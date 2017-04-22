@@ -40,7 +40,8 @@ public class Sql2oModel implements Model {
 	@Override
 	public List<Panorama> getAllPanos() {
 		try( Connection conn = sql2o.open()) {
-			List<Panorama> panos = conn.createQuery("select * from panorama order by region")
+			List<Panorama> panos = conn.createQuery("select * from panorama " +
+                          "where gsvImageDate > '2009-12-31' order by region, panoramaId")
 					.executeAndFetch(Panorama.class);
 			for( Panorama pano : panos ) {
 				pano.setBoundingBoxes( getPanoBoundingBoxes(pano.getPanoramaId()));
@@ -53,7 +54,8 @@ public class Sql2oModel implements Model {
 	public List<Panorama> getPanosByIMapSpeciesId(int speciesId) {
 		try(Connection conn = sql2o.open()) {
 			List<Panorama> panoramas = conn.createQuery("select p.* from panorama p" +
-					" where p.imap_species_speciesId = :speciesId order by p.region")
+					" where p.imap_species_speciesId = :speciesId and p.gsvImageDate > '2009-12-31' "+
+                                        "order by p.region, p.panoramaId")
 					.addParameter("speciesId", speciesId)
 					.executeAndFetch(Panorama.class);
 			for (Panorama panorama : panoramas) {
@@ -207,16 +209,32 @@ public class Sql2oModel implements Model {
 	}
 	
 	@Override
-	public String findUnannotatedPanorama() {
+	public String findNextPanorama( String currentPanoramaId ) {
 		String panoramaId = "";
 		try( Connection conn = sql2o.open() ) {
-			panoramaId = conn.createQuery("select p.panoramaId from panorama p "+
-					"where p.panoramaId not in (select panorama_panoramaId from bounding_box) " +
-					" and p.noInvasives=0")
-				.executeScalar(String.class);
-			if( panoramaId == null ) {
+                        Panorama currentPanorama = getPanorama( currentPanoramaId );
+                        // This should return things in the same order as the list in the index page
+                        // It is meant to be called from the edit panorama page and return the next panorama
+                        // We can't do a query that with both the region and panoramaId in the where clause
+                        // if you're on the last panorama for the current region, you will get inconsistent results
+                        // In practice, there are usually only around 10-20 panoramas per region, so looping over 
+                        // these panoramas to find the next one is not terrible
+			List<String> panoramaIds = conn.createQuery("select p.panoramaId from panorama p "+
+					"where p.gsvImageDate > '2009-12-31' and p.region >= :currentRegion " +
+					"order by region, panoramaId ")
+                                .addParameter("currentRegion", currentPanorama.getRegion())
+				.executeAndFetch(String.class);
+			if( panoramaIds == null ) {
 				panoramaId = "";
-			}
+			} else { 
+                                int indexOfCurrentPanoramaId = panoramaIds.indexOf( currentPanoramaId );
+                                if( indexOfCurrentPanoramaId == -1 || indexOfCurrentPanoramaId == panoramaIds.size()-1 ) {
+                                    panoramaId="";
+                                } else {
+                                  panoramaId = panoramaIds.get(indexOfCurrentPanoramaId+1);
+                                }
+
+                        }
 		}
 		return panoramaId;
 	}

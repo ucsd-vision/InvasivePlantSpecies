@@ -11,7 +11,7 @@ public interface Model {
 	List<Panorama> getAllPanos();
 	List<Panorama> getPanosByIMapSpeciesId(int speciesId);
 	void deletePanorama(String panoramaId);
-	String findUnannotatedPanorama();
+	String findNextPanorama( String currentPanoramaId );
 
 	List<Species> getAllSpecies();
 	void updateSpecies(Species species);

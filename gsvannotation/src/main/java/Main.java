@@ -219,8 +219,9 @@ public class Main {
 		get("getNumberOfBoundingBoxesPerSpecies", (request, response)
 				-> jsonMapper.writeValueAsString(model.getNumberOfBoundingBoxesPerSpecies()));
 		
-		get("findUnannotatedPanorama", (request, response) -> {
-			return model.findUnannotatedPanorama();
+		get("findNextPanorama", (request, response) -> {
+                        String currentPanoramaId = request.queryParams("currentPanoramaId");
+			return model.findNextPanorama( currentPanoramaId );
 		});
 		
 		delete("deletePanorama", (request, response) -> {
