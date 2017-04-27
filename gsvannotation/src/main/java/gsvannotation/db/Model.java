@@ -10,6 +10,7 @@ public interface Model {
 	
 	List<Panorama> getAllPanos();
 	List<Panorama> getPanosByIMapSpeciesId(int speciesId);
+	List<Panorama> getPanosByBoundingBoxSpeciesId( int speciesId );
 	void deletePanorama(String panoramaId);
 	String findNextPanorama( String currentPanoramaId );
 

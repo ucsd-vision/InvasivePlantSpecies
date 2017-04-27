@@ -215,6 +215,21 @@ public class Main {
 
 			return jsonMapper.writeValueAsString(panoramas);
 		});
+		
+		get("getPanosByBoundingBoxSpeciesId", (request, response) -> {
+			List<Panorama> panoramas;
+			
+			String speciesId = request.queryParams("speciesId");
+			int id = Integer.parseInt( speciesId );
+			
+			if( id == -1 ) {
+				panoramas = model.getAllPanos();
+			} else {
+				panoramas = model.getPanosByBoundingBoxSpeciesId( id );
+			}
+			
+			return jsonMapper.writeValueAsString(panoramas);
+		});
 
 		get("getNumberOfBoundingBoxesPerSpecies", (request, response)
 				-> jsonMapper.writeValueAsString(model.getNumberOfBoundingBoxesPerSpecies()));

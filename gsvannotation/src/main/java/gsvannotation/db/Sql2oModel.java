@@ -65,6 +65,25 @@ public class Sql2oModel implements Model {
 			return panoramas;
 		}
 	}
+	
+	@Override
+	public List<Panorama> getPanosByBoundingBoxSpeciesId( int speciesId ) {
+		try(Connection conn = sql2o.open()) {
+			List<Panorama> panoramas = conn.createQuery("select p.* from panorama p" +
+					" where p.panoramaId in "+
+					"(select panorama_panoramaId from bounding_box where species_speciesId = :speciesId) " +
+					"and p.gsvImageDate > '2009-12-31' "+
+                    "order by p.region, p.panoramaId")
+					.addParameter("speciesId", speciesId)
+					.executeAndFetch(Panorama.class);
+			for (Panorama panorama : panoramas) {
+				panorama.setBoundingBoxes(getPanoBoundingBoxes(panorama.getPanoramaId()));
+			}
+
+			return panoramas;
+		}
+		
+	}
 
 	@Override
 	public List<Species> getAllSpecies() {

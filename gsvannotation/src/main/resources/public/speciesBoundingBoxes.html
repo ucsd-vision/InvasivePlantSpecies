@@ -81,7 +81,7 @@ speciesDropdown.onchange = function( e ) {
             	});
             }			
 		};
-		xobj.open('GET', '/getPanosBySpeciesId?speciesId='+speciesId, true);
+		xobj.open('GET', '/getPanosByBoundingBoxSpeciesId?speciesId='+speciesId, true);
 		xobj.send();
 	}
 }
