@@ -2,6 +2,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import gsvannotation.db.*;
 import org.sql2o.Sql2o;
 
+import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
@@ -253,8 +254,9 @@ public class Main {
 			return "";
 		});
 
-
-		writeArrayOut(getHeatmapArray(model.getAllPanos()));
+        long[][] heatmap = getHeatmapArray(model.getAllPanos());
+		writeArrayOut(heatmap);
+		createImageFromArray(heatmap);
 	}
 
 	public static long[][] getHeatmapArray(List<Panorama> panoramas) {
@@ -358,5 +360,27 @@ public class Main {
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
+	}
+
+	public static Image createImageFromArray(long[][] array) {
+        BufferedImage image = new BufferedImage(array.length, array[0].length, BufferedImage.TYPE_INT_RGB);
+
+        Graphics g = image.getGraphics();
+
+        for (int i = 0; i < array.length; i++) {
+            for (int j = 0; j < array[i].length; j++) {
+                g.setColor(new Color((int)array[i][j],(int)array[i][j],(int)array[i][j]));
+                g.drawLine(i,j,i,j);
+            }
+        }
+
+        try {
+            ImageIO.write(image, "png", new File("heatmap.png"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+        return image;
 	}
 }
