@@ -236,12 +236,12 @@
                 	panoOffset.x += img.width;
                 }
                 console.debug(currentMousePosition.x+","+currentMousePosition.y+" "+mouseDownPosition.x+","+mouseDownPosition.y+" "+
-                		lastPanoOffset.x+","+lastPanoOffset.y);            	
+                		lastPanoOffset.x+","+lastPanoOffset.y);
         		lastPanoOffset.x = panoOffset.x;
         		lastPanoOffset.y = panoOffset.y;
                 break;
             case modesEnum.BoundingBox:
-              bbEnd = {x: currentMousePosition.x - panoOffset.x, 
+              bbEnd = {x: currentMousePosition.x - panoOffset.x,
             		y: currentMousePosition.y - panoOffset.y};
                 addBoundingBox(bbStart, bbEnd, lastSpecies);
               defaultMode();
