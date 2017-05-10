@@ -243,8 +243,9 @@
             case modesEnum.BoundingBox:
               bbEnd = {x: currentMousePosition.x - panoOffset.x,
             		y: currentMousePosition.y - panoOffset.y};
-                addBoundingBox(bbStart, bbEnd, lastSpecies);
-              defaultMode();
+              if (addBoundingBox(bbStart, bbEnd, lastSpecies)) {
+                  defaultMode();
+              }
               break;
         }
     };
@@ -374,9 +375,11 @@
         var startY = Math.min(bbStart.y, bbEnd.y);
         var endY = Math.max(bbStart.y, bbEnd.y);
 
-        var zeroDimension = 5;
+        var minimumSize = 70;
 
-        if (endX - startX > zeroDimension && endY - startY > zeroDimension) { // ensure that bounding boxes with length or width 0 get added
+        var isLargeEnough = endX - startX > minimumSize && endY - startY > minimumSize;
+
+        if (isLargeEnough) { // ensure that bounding boxes with length or width 0 don't get added
             var newbb = {index: bbid, start: {x: startX, y: startY}, end: {x: endX, y: endY}};
 
             // add bounding box to page
@@ -477,7 +480,13 @@
             lastSpecies = speciesId;
 
             unsavedChanges = true;
+        } else {
+            //display error message
+            statusDiv.innerHTML = "Bounding Box is to small!";
+            window.alert("Bounding Box is to small!");
         }
+
+        return isLargeEnough;
     }
 
     function updateBoundingBox(bbNewStart, bbNewEnd, speciesId, bbid) { //todo: call this to update bounding box
