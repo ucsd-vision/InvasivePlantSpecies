@@ -544,6 +544,17 @@
         saveButton.disabled = true;
         saveButton.value = "Saving...";
         // put in format back end will understand
+        if (document.getElementById("panoNoInvasives").checked && boundingBoxes.length != 0) {
+            var saveAnyways = window.confirm("The no invasive species box is checked _and_ bounding boxes have been added. \n    Save anyways?");
+
+            if (!saveAnyways) {
+                saveButton.value = "Save";
+                document.getElementById("saveStatus").innerHTML="Save Canceled";
+                saveButton.disabled = false;
+                return;
+            }
+
+        }
         var pano = {panoramaId: urlParams.panoramaId, lat: 0, lng: 0, image: ""
         		, boundingBoxes: []
         		, noInvasives: document.getElementById("panoNoInvasives").checked};
