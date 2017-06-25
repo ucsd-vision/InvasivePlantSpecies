@@ -10,7 +10,6 @@ import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.stream.Collectors;
 
 import static spark.Spark.*;
@@ -154,16 +153,6 @@ public class Main {
 			return jsonMapper.writeValueAsString( panos );
 		});
 
-		get("/getHeatmap", ((request, response) -> {
-			List<Panorama> panoramas = model.getAllPanos();
-			Image heatmap = new BufferedImage(3328, 1664, BufferedImage.TYPE_INT_RGB);
-
-			long[][] heatmapArray = getHeatmapArray(panoramas);
-
-
-			return null;
-		}));
-		
 		get("/getAllSpecies", (request, response) -> {
 			List<Species> species = model.getAllSpecies();
 			return jsonMapper.writeValueAsString( species );
@@ -254,88 +243,6 @@ public class Main {
 			return "";
 		});
 
-        long[][] heatmap = getHeatmapArray(model.getAllPanos());
-		writeArrayOut(heatmap);
-		createImageFromArray(heatmap);
-	}
-
-	public static long[][] getHeatmapArray(List<Panorama> panoramas) {
-		Image heatmap = new BufferedImage(3328, 1664, BufferedImage.TYPE_INT_RGB);
-
-		long[][] heatmapArray = new long[3328][1664];
-		long largestNumber = -1;
-		int counter = 0;
-
-		for (Panorama p :
-				panoramas) {
-			for (BoundingBox bb :
-					p.getBoundingBoxes()) {
-				// adds a standard panorama, which does not cross borders
-				if (bb.getTopLeftX() < bb.getBottomRightX() && bb.getTopLeftX() >= 0 && bb.getTopLeftY() >=0) {
-					counter++;
-					for (int i = bb.getTopLeftX(); i < bb.getBottomRightX(); i++) {
-						for (int j = bb.getTopLeftY(); j < bb.getBottomRightY(); j++) {
-							heatmapArray[i][j]++;
-							if (heatmapArray[i][j] > largestNumber) {
-								largestNumber = heatmapArray[i][j];
-							}
-						}
-					}
-				} else if (bb.getTopLeftX() >= bb.getBottomRightX()) {
-					counter++;
-					for (int i = 0; i < bb.getBottomRightX(); i++) {
-						for (int j = bb.getTopLeftY(); j < bb.getBottomRightY(); j++) {
-							heatmapArray[i][j]++;
-							if (heatmapArray[i][j] > largestNumber) {
-								largestNumber = heatmapArray[i][j];
-							}
-						}
-					}
-
-					for (int i = bb.getTopLeftX(); i < heatmapArray.length; i++) {
-						for (int j = bb.getTopLeftY(); j < bb.getBottomRightY(); j++) {
-							heatmapArray[i][j]++;
-							if (heatmapArray[i][j] > largestNumber) {
-								largestNumber = heatmapArray[i][j];
-							}
-						}
-					}
-				} else {
-					counter++;
-					for (int i = 0; i < bb.getBottomRightX(); i++) {
-						for (int j = bb.getTopLeftY(); j < bb.getBottomRightY(); j++) {
-							heatmapArray[i][j]++;
-							if (heatmapArray[i][j] > largestNumber) {
-								largestNumber = heatmapArray[i][j];
-							}
-						}
-					}
-
-					for (int i = heatmapArray.length+bb.getTopLeftX(); i < heatmapArray.length; i++) {
-						for (int j = bb.getTopLeftY(); j < bb.getBottomRightY(); j++) {
-							heatmapArray[i][j]++;
-							if (heatmapArray[i][j] > largestNumber) {
-								largestNumber = heatmapArray[i][j];
-							}
-						}
-					}
-				}
-
-
-			}
-		}
-		System.out.println(counter);
-
-		double ratio = 255.0/largestNumber; // this scales the heat map. otherwise just use 1.0/largestNumber to normalize if necessary.
-		for (int i = 0; i < heatmapArray.length; i++) {
-			for (int j = 0; j < heatmapArray[0].length; j++) {
-				heatmapArray[i][j] = 255-(int) (heatmapArray[i][j]*ratio);
-			}
-		}
-
-		System.out.println(ratio);
-		System.out.println(largestNumber);
-		return heatmapArray;
 	}
 
 	public static void writeArrayOut(long[][] array) {
