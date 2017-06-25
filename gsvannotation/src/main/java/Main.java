@@ -75,7 +75,7 @@ public class Main {
 		String dbport = args[3];
 		String webport = args[4];
 		
-	    Sql2o sql2o = new Sql2o("jdbc:mysql://" + dbhost + ":" + dbport + "/invasivespecies", 
+	    Sql2o sql2o = new Sql2o("jdbc:mysql://" + dbhost + ":" + dbport + "/invasivespecies?useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC", 
 	            dbusername, dbpassword);
 	    
 	    // these column mappings get applied to all queries
