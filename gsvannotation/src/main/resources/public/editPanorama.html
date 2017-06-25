@@ -236,15 +236,16 @@
                 	panoOffset.x += img.width;
                 }
                 console.debug(currentMousePosition.x+","+currentMousePosition.y+" "+mouseDownPosition.x+","+mouseDownPosition.y+" "+
-                		lastPanoOffset.x+","+lastPanoOffset.y);            	
+                		lastPanoOffset.x+","+lastPanoOffset.y);
         		lastPanoOffset.x = panoOffset.x;
         		lastPanoOffset.y = panoOffset.y;
                 break;
             case modesEnum.BoundingBox:
-              bbEnd = {x: currentMousePosition.x - panoOffset.x, 
+              bbEnd = {x: currentMousePosition.x - panoOffset.x,
             		y: currentMousePosition.y - panoOffset.y};
-                addBoundingBox(bbStart, bbEnd, lastSpecies);
-              defaultMode();
+              if (addBoundingBox(bbStart, bbEnd, lastSpecies)) {
+                  defaultMode();
+              }
               break;
         }
     };
@@ -374,9 +375,11 @@
         var startY = Math.min(bbStart.y, bbEnd.y);
         var endY = Math.max(bbStart.y, bbEnd.y);
 
-        var zeroDimension = 5;
+        var minimumSize = 70;
 
-        if (endX - startX > zeroDimension && endY - startY > zeroDimension) { // ensure that bounding boxes with length or width 0 get added
+        var isLargeEnough = endX - startX > minimumSize && endY - startY > minimumSize;
+
+        if (isLargeEnough) { // ensure that bounding boxes with length or width 0 don't get added
             var newbb = {index: bbid, start: {x: startX, y: startY}, end: {x: endX, y: endY}};
 
             // add bounding box to page
@@ -477,7 +480,13 @@
             lastSpecies = speciesId;
 
             unsavedChanges = true;
+        } else {
+            //display error message
+            statusDiv.innerHTML = "Bounding Box is to small!";
+            window.alert("Bounding Box is to small!");
         }
+
+        return isLargeEnough;
     }
 
     function updateBoundingBox(bbNewStart, bbNewEnd, speciesId, bbid) { //todo: call this to update bounding box
@@ -535,6 +544,17 @@
         saveButton.disabled = true;
         saveButton.value = "Saving...";
         // put in format back end will understand
+        if (document.getElementById("panoNoInvasives").checked && boundingBoxes.length != 0) {
+            var saveAnyways = window.confirm("The no invasive species box is checked _and_ bounding boxes have been added. \n    Save anyways?");
+
+            if (!saveAnyways) {
+                saveButton.value = "Save";
+                document.getElementById("saveStatus").innerHTML="Save Canceled";
+                saveButton.disabled = false;
+                return;
+            }
+
+        }
         var pano = {panoramaId: urlParams.panoramaId, lat: 0, lng: 0, image: ""
         		, boundingBoxes: []
         		, noInvasives: document.getElementById("panoNoInvasives").checked};
