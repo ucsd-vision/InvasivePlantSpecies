@@ -23,6 +23,11 @@
 <input type="button" id="buttonPan" onclick="panningMode();" value="Pan"/>
 <input type="button" id="buttonBB" onclick="bbMode();" value="Add bounding box"/>
 <input type="button" id="deleteBB" onclick="deleteBB();" value="Delete Selected" disabled="True"/>
+<input type="checkbox" id="chkHeatmap" onclick="heatmapCheckbox_onclick()"> Show heatmap for 
+<select id="heatmapSpecies" disabled="True" onchange="heatmapCheckbox_onclick()">
+	<option value="1">Common Reed</option>
+	<option value="2">Japanese Knotweed</option>
+</select>
 <div id="divStatus">
 </div>
 <div>
@@ -39,7 +44,7 @@
     <h3>Bounding boxes</h3>
     <div id="divUpdateBoundingBoxes">
         <input type="button" id="buttonUpdateAll" onclick="updateAllBoundingBoxes();"
-               value="Update all bounding boxes' species to: ">
+               value="Update all bounding boxes' species to: "> <select id="speciesUpdateAll"></select>
     </div>
     <div id="divBoundingBoxes"></div>
 </div>
@@ -103,18 +108,35 @@
 
     // Image that will be displayed on canvas
     var img = new Image();
+    var imgLoaded = false;
+    var heatmap = new Image();
+    var heatmapLoaded = false;
+    
     var panoObj;
     img.onload = function () {
+    	imgLoaded = true;
         panoObj.boundingBoxes.forEach(function (bb) {
             var start = {x: bb.topLeftX, y: bb.topLeftY};
             var end = {x: bb.bottomRightX, y: bb.bottomRightY};
-            addBoundingBox(start, end, bb.speciesId);
+            addBoundingBox(start, end, bb.speciesId, true);
         });
-        render();
+    	if( imgLoaded ) {
+            render();
+    	}
         // the addboundingbox method sets unsavedChanges to true
         // we don't want it to be true yet
         unsavedChanges = false;
     };
+    
+    heatmap.onload = function() {
+    	heatmapLoaded = true;
+   		render();
+    }
+    
+    heatmap.onerror = function() {
+    	heatmapLoaded = false;
+    	window.alert("Error loading heatmap image");
+    }
 
     //ajax call to get all species
     var speciesJson;
@@ -152,16 +174,13 @@
 
 
     var divSpecies = document.getElementById("divUpdateBoundingBoxes");
-    var speciesDropdown = document.createElement("select");
+    var speciesDropdown = document.getElementById("speciesUpdateAll");
     speciesJson.forEach(function (species) {
         var opt = document.createElement("option");
         opt.value = species.speciesId;
         opt.text = species.description;
-
-        speciesDropdown.options.add(opt);
+        speciesDropdown.add(opt);
     });
-    speciesDropdown.id = "speciesUpdateAll";
-    divSpecies.appendChild(speciesDropdown);
 
 
 
@@ -272,11 +291,20 @@
 
 
     function render() {
-
+		ctx.clearRect(0,0,canvas.width, canvas.height);
+    	ctx.globalAlpha = 1;
         ctx.drawImage(img, panoOffset.x, panoOffset.y);
-
+		var drawHeatmap = document.getElementById("chkHeatmap").checked && heatmapLoaded;        
+        if( drawHeatmap ) {
+	        //ctx.globalCompositeOperation = "multiply";
+	        ctx.globalAlpha = .5;
+			ctx.drawImage(heatmap, panoOffset.x, panoOffset.y);
+        } else {
+        	//ctx.globalCompositeOperation = 'source-over';
+        }
         // wrap around image on the left
         if (panoOffset.x > 0) {
+        	ctx.globalAlpha = 1;
             ctx.drawImage(
                 img,
                 img.width - panoOffset.x, // x coordinate where to start clipping
@@ -288,10 +316,26 @@
                 panoOffset.x, // width
                 img.height // height
             );
+            
+            if( drawHeatmap ) {
+            	ctx.globalAlpha = .5;
+	            ctx.drawImage(
+	                    heatmap,
+	                    img.width - panoOffset.x, // x coordinate where to start clipping
+	                    0, // y coordinate where to start clipping
+	                    panoOffset.x, // width
+	                    img.height, // height
+	                    0, // x coordinate where to place the image
+	                    panoOffset.y, // y coordinate where to place the image on the canvas
+	                    panoOffset.x, // width
+	                    img.height // height
+	                );
+            }
         }
 
         // wrap around image on the right
         if (panoOffset.x < -(img.width - canvas.width)) {
+        	ctx.globalAlpha = 1;
             ctx.drawImage(
                 img,
                 0, // x coordinate where to start clipping
@@ -303,6 +347,20 @@
                 -(img.width - canvas.width + panoOffset.x), // width
                 img.height // height
             );
+            if( drawHeatmap ) {
+            	ctx.globalAlpha = .5;
+	            ctx.drawImage(
+	                    heatmap,
+	                    0, // x coordinate where to start clipping
+	                    0, //y coordinate where to start clipping
+	                    -(img.width - canvas.width + panoOffset.x), // width
+	                    img.height, // height
+	                    canvas.width + (img.width - canvas.width + panoOffset.x), // x coordinate where to place the image
+	                    panoOffset.y, // y coordinate where to place the image
+	                    -(img.width - canvas.width + panoOffset.x), // width
+	                    img.height // height
+	                );
+            }
         }
 
         drawBoundingBoxes();
@@ -366,7 +424,7 @@
         lastSpecies = newSpeciesValue;
     }
 
-    function addBoundingBox(bbStart, bbEnd, speciesId) {
+    function addBoundingBox(bbStart, bbEnd, speciesId, ignoreMinimumSize=false) {
         var bbid = nextBoundingBoxIndex;
         nextBoundingBoxIndex++;
         // in case bounding box was not drawn from top left to bottom right
@@ -377,7 +435,7 @@
 
         var minimumSize = 70;
 
-        var isLargeEnough = endX - startX > minimumSize && endY - startY > minimumSize;
+        var isLargeEnough = (ignoreMinimumSize) || (endX - startX > minimumSize && endY - startY > minimumSize);
 
         if (isLargeEnough) { // ensure that bounding boxes with length or width 0 don't get added
             var newbb = {index: bbid, start: {x: startX, y: startY}, end: {x: endX, y: endY}};
@@ -387,6 +445,9 @@
 
             var newdiv = document.createElement("div");
             newdiv.id = "divBB" + bbid;
+            newdiv.style.border="solid";
+            newdiv.style.borderColor="gray";
+            newdiv.style.padding="5px";
 
             // display bounding box image
             var newimg = document.createElement("canvas");
@@ -459,6 +520,7 @@
             var deleteButton = document.createElement("input");
             deleteButton.type = "button";
             deleteButton.value = "Delete bounding box";
+            deleteButton.style.verticalAlign="top";
             deleteButton.onclick = function () {
                 selectedBBIndex = -1;
                 for (var i = 0; i < boundingBoxes.length; i++) {
@@ -482,8 +544,8 @@
             unsavedChanges = true;
         } else {
             //display error message
-            statusDiv.innerHTML = "Bounding Box is to small!";
-            window.alert("Bounding Box is to small!");
+            statusDiv.innerHTML = "Bounding Box is too small!";
+            window.alert("Bounding Box is too small!");
         }
 
         return isLargeEnough;
@@ -661,6 +723,18 @@
         updateDisplay();
     }
     
+    function heatmapCheckbox_onclick() {
+    	var chkHeatmap = document.getElementById("chkHeatmap");
+    	var species = document.getElementById("heatmapSpecies");
+    	if( chkHeatmap.checked ) {
+            heatmap.src = "heatmaps/" + urlParams.panoramaId+"_hm_"+species.value+".png";
+            species.disabled = false;
+    	} else {
+    		updateDisplay();
+    		species.disabled = true;
+    	}
+    	
+    }
 </script>
 </body>
 </html>
