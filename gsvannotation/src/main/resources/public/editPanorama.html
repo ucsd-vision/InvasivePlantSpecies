@@ -92,6 +92,18 @@
     // canvas mouse input mode
     var modesEnum = {"Select": 0, "Pan": 1, "BoundingBox": 2};
     var mode = modesEnum.Select;
+    
+    var resizeModeEnum = {"none":0,
+    		"n":1, 
+    		"ne":2, 
+    		"e":3, 
+    		"se":4, 
+    		"s":5, 
+    		"sw":6, 
+    		"w":7, 
+    		"nw":8};
+    var resizeMode = resizeModeEnum.none;
+    var isResizing = false;
 
     // holds all bounding boxes
     var boundingBoxes = [];
@@ -194,8 +206,14 @@
 
         switch (mode) {
             case modesEnum.Select:
-                findBoundingBox(xVal, yVal);
+            	if (resizeMode == resizeModeEnum.none) {
+                	findBoundingBox(xVal, yVal);
+            	} else {
+            		isResizing = true;
+            	}
+            	
                 break;
+            	
             case modesEnum.Pan:
 
                 break;
@@ -233,6 +251,81 @@
                 drawCrosshairs(currentMousePosition.x-panoOffset.x, 
                 		currentMousePosition.y-panoOffset.y);
             }
+        } else if( mode == modesEnum.Select ) {
+        	// check to see if we are over a bounding box edge of the selected bounding box
+        	var PIXEL_BUFFER=3;
+			if( selectedBBIndex != -1) {
+				var bb = boundingBoxes[selectedBBIndex];
+				if(isResizing) {
+					if(resizeMode == resizeModeEnum.w) {
+						bb.start.x = currentMousePosition.x-panoOffset.x;
+					} else if( resizeMode == resizeModeEnum.e ) {
+						bb.end.x = currentMousePosition.x-panoOffset.x;
+					} else if( resizeMode == resizeModeEnum.n ) {
+						bb.start.y = currentMousePosition.y-panoOffset.y;
+					} else if( resizeMode == resizeModeEnum.s ) {
+						bb.end.y = currentMousePosition.y-panoOffset.y;
+					} else if( resizeMode == resizeModeEnum.nw ) {
+						bb.start.x = currentMousePosition.x-panoOffset.x;
+						bb.start.y = currentMousePosition.y-panoOffset.y;
+					} else if( resizeMode == resizeModeEnum.ne ) {
+						bb.end.x = currentMousePosition.x-panoOffset.x;
+						bb.start.y = currentMousePosition.y-panoOffset.y;						
+					} else if( resizeMode == resizeModeEnum.se ) {
+						bb.end.x = currentMousePosition.x-panoOffset.x;
+						bb.end.y = currentMousePosition.y-panoOffset.y;						
+					} else if( resizeMode == resizeModeEnum.sw ) {
+						bb.start.x = currentMousePosition.x-panoOffset.x;
+						bb.end.y = currentMousePosition.y-panoOffset.y;						
+					}
+					unsavedChanges = true;
+					updateDisplay();
+				} else {
+					if( currentMousePosition.y > bb.start.y+PIXEL_BUFFER && currentMousePosition.y < bb.end.y - PIXEL_BUFFER ) {
+						// see if we can do horizontal resizing
+						if( Math.abs(currentMousePosition.x - bb.start.x) < PIXEL_BUFFER) {
+							canvas.style.cursor="col-resize";
+							resizeMode = resizeModeEnum.w;
+						} else if (	Math.abs(currentMousePosition.x - bb.end.x) < PIXEL_BUFFER ) {
+							canvas.style.cursor="col-resize";
+							resizeMode = resizeModeEnum.e;
+						} else {
+							canvas.style.cursor="";
+							resizeMode = resizeModeEnum.none;
+						}
+					} else if( currentMousePosition.x > bb.start.x+PIXEL_BUFFER && currentMousePosition.x < bb.end.x - PIXEL_BUFFER ) {
+						// see if we can do vertical resizing
+						if( Math.abs(currentMousePosition.y - bb.start.y) < PIXEL_BUFFER) {
+							canvas.style.cursor="row-resize";	
+							resizeMode = resizeModeEnum.n;
+						} else if( Math.abs(currentMousePosition.y - bb.end.y) < PIXEL_BUFFER ) {
+							canvas.style.cursor="row-resize";	
+							resizeMode = resizeModeEnum.s;
+						} else {
+							canvas.style.cursor="";
+							resizeMode = resizeModeEnum.none;
+						}
+					} else if ( (Math.abs(currentMousePosition.x-bb.start.x) < PIXEL_BUFFER && Math.abs(currentMousePosition.y-bb.start.y) < PIXEL_BUFFER ) ){
+						canvas.style.cursor="nwse-resize";
+						resizeMode = resizeModeEnum.nw;
+					} else if( (Math.abs(currentMousePosition.x-bb.end.x) < PIXEL_BUFFER && Math.abs(currentMousePosition.y-bb.end.y) < PIXEL_BUFFER )) {
+						// do a north-west to south-east resize
+						canvas.style.cursor="nwse-resize";
+						resizeMode = resizeModeEnum.se;
+					} else if ( (Math.abs(currentMousePosition.x-bb.start.x) < PIXEL_BUFFER && Math.abs(currentMousePosition.y-bb.end.y) < PIXEL_BUFFER ) ) {
+						resizeMode = resizeModeEnum.sw;
+						canvas.style.cursor="nesw-resize";						
+					} else if( (Math.abs(currentMousePosition.x-bb.end.x) < PIXEL_BUFFER && Math.abs(currentMousePosition.y-bb.start.y) < PIXEL_BUFFER )) {
+						// do a north-east to south-west resize
+						resizeMode = resizeModeEnum.ne;
+						canvas.style.cursor="nesw-resize";
+					} else { 
+						canvas.style.cursor="";
+						resizeMode = resizeModeEnum.none;
+					}
+				}
+			}
+        	
         }
     };
 
@@ -246,6 +339,12 @@
         currentMousePosition = {x: xVal, y: yVal};
         switch (mode) {
             case modesEnum.Select:
+            	if (isResizing) {
+            		isResizing = false;
+            		var bb = boundingBoxes[selectedBBIndex];
+            		updateBoundingBox(bb.start, bb.end, selectedBBIndex);
+            	}
+            	
                 break;
             case modesEnum.Pan:
                 if( panoOffset.x > canvas.width ) {
@@ -271,7 +370,9 @@
     function updateDisplay() {
         switch (mode) {
             case modesEnum.Select:
-                canvas.style.cursor = "";
+            	if(!isResizing) {
+                	canvas.style.cursor = "";
+            	}
                 document.getElementById("divStatus").innerHTML = "Select mode";
                 break;
             case modesEnum.Pan:
@@ -451,6 +552,7 @@
 
             // display bounding box image
             var newimg = document.createElement("canvas");
+            newimg.id = "bbImage"+bbid;
             newimg.width = endX - startX;
             newimg.height = endY - startY;
             var newctx = newimg.getContext('2d');
@@ -551,25 +653,22 @@
         return isLargeEnough;
     }
 
-    function updateBoundingBox(bbNewStart, bbNewEnd, speciesId, bbid) { //todo: call this to update bounding box
+    function updateBoundingBox(bbNewStart, bbNewEnd, bbIndex) { //todo: call this to update bounding box
         //in case bounding box was not drawn from top left to bottom right
         var startX = Math.min(bbNewStart.x, bbNewEnd.x);
         var endX = Math.max(bbNewStart.x, bbNewEnd.x);
         var startY = Math.min(bbNewStart.y, bbNewEnd.y);
         var endY = Math.max(bbNewStart.y, bbNewEnd.y);
+        
+        var bbid = boundingBoxes[bbIndex].index;
 
-        var updatedBB = {index: bbid, start: {x: startX, y: startY}, end: {x: endX, y: endY}};
+        boundingBoxes[bbIndex] = {index: bbid, start: {x: startX, y: startY}, end: {x: endX, y: endY}};
 
-        var updateDiv = document.getElementById("divBB" + bbid);
-
-        updateDiv.innerHTML = "";
-
-        // display bounding box image
-        var newimg = document.createElement("canvas");
-        newimg.id = "bbImage" + bbid;
+        var newimg = document.getElementById("bbImage"+bbid);
+        var newctx = newimg.getContext('2d');
+        newctx.clearRect(0,0,newimg.width, newimg.height);
         newimg.width = endX - startX;
         newimg.height = endY - startY;
-        var newctx = newimg.getContext('2d');
         newctx.drawImage(img,
             startX, // where to start clipping
             startY, // where to start clipping
@@ -579,25 +678,6 @@
             0, // where to place image on canvas
             endX - startX, // width
             endY - startY); // height
-        updateDiv.appendChild(newimg);
-
-        var speciesDropdown = document.createElement("select");
-        speciesDropdown.onchange = function (e) {
-            unsavedChanges = true;
-        };
-        speciesJson.forEach(function (species) {
-            var opt = document.createElement("option");
-            opt.value = species.speciesId;
-            opt.text = species.description;
-            if (opt.value == speciesId) {
-                opt.selected = true;
-            }
-            speciesDropdown.options.add(opt);
-        });
-        speciesDropdown.id = "bbSpecies" + bbid;
-        updateDiv.appendChild(speciesDropdown);
-
-
     }
 
     function savePanorama() {
