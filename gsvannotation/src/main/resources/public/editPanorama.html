@@ -234,6 +234,9 @@
         var xVal = e.pageX - this.offsetLeft,
             yVal = e.pageY - this.offsetTop;
         currentMousePosition = {x: xVal, y: yVal};
+        var correctedMousePosition = {x:currentMousePosition.x-panoOffset.x,
+        	y: currentMousePosition.y-panoOffset.y
+        };
 
         if (mode == modesEnum.Pan) {
             if (mouseButtonDown) {
@@ -258,64 +261,64 @@
 				var bb = boundingBoxes[selectedBBIndex];
 				if(isResizing) {
 					if(resizeMode == resizeModeEnum.w) {
-						bb.start.x = currentMousePosition.x-panoOffset.x;
+						bb.start.x = correctedMousePosition.x;
 					} else if( resizeMode == resizeModeEnum.e ) {
-						bb.end.x = currentMousePosition.x-panoOffset.x;
+						bb.end.x = correctedMousePosition.x;
 					} else if( resizeMode == resizeModeEnum.n ) {
-						bb.start.y = currentMousePosition.y-panoOffset.y;
+						bb.start.y = correctedMousePosition.y;
 					} else if( resizeMode == resizeModeEnum.s ) {
-						bb.end.y = currentMousePosition.y-panoOffset.y;
+						bb.end.y = correctedMousePosition.y;
 					} else if( resizeMode == resizeModeEnum.nw ) {
-						bb.start.x = currentMousePosition.x-panoOffset.x;
-						bb.start.y = currentMousePosition.y-panoOffset.y;
+						bb.start.x = correctedMousePosition.x;
+						bb.start.y = correctedMousePosition.y;
 					} else if( resizeMode == resizeModeEnum.ne ) {
-						bb.end.x = currentMousePosition.x-panoOffset.x;
-						bb.start.y = currentMousePosition.y-panoOffset.y;						
+						bb.end.x = correctedMousePosition.x;
+						bb.start.y = correctedMousePosition.y;						
 					} else if( resizeMode == resizeModeEnum.se ) {
-						bb.end.x = currentMousePosition.x-panoOffset.x;
-						bb.end.y = currentMousePosition.y-panoOffset.y;						
+						bb.end.x = correctedMousePosition.x;
+						bb.end.y = correctedMousePosition.y;						
 					} else if( resizeMode == resizeModeEnum.sw ) {
-						bb.start.x = currentMousePosition.x-panoOffset.x;
-						bb.end.y = currentMousePosition.y-panoOffset.y;						
+						bb.start.x = correctedMousePosition.x;
+						bb.end.y = correctedMousePosition.y;						
 					}
 					unsavedChanges = true;
 					updateDisplay();
 				} else {
-					if( currentMousePosition.y > bb.start.y+PIXEL_BUFFER && currentMousePosition.y < bb.end.y - PIXEL_BUFFER ) {
+					if( correctedMousePosition.y > bb.start.y+PIXEL_BUFFER && correctedMousePosition.y < bb.end.y - PIXEL_BUFFER ) {
 						// see if we can do horizontal resizing
-						if( Math.abs(currentMousePosition.x - bb.start.x) < PIXEL_BUFFER) {
+						if( Math.abs(correctedMousePosition.x - bb.start.x) < PIXEL_BUFFER) {
 							canvas.style.cursor="col-resize";
 							resizeMode = resizeModeEnum.w;
-						} else if (	Math.abs(currentMousePosition.x - bb.end.x) < PIXEL_BUFFER ) {
+						} else if (	Math.abs(correctedMousePosition.x - bb.end.x) < PIXEL_BUFFER ) {
 							canvas.style.cursor="col-resize";
 							resizeMode = resizeModeEnum.e;
 						} else {
 							canvas.style.cursor="";
 							resizeMode = resizeModeEnum.none;
 						}
-					} else if( currentMousePosition.x > bb.start.x+PIXEL_BUFFER && currentMousePosition.x < bb.end.x - PIXEL_BUFFER ) {
+					} else if( correctedMousePosition.x > bb.start.x+PIXEL_BUFFER && correctedMousePosition.x < bb.end.x - PIXEL_BUFFER ) {
 						// see if we can do vertical resizing
-						if( Math.abs(currentMousePosition.y - bb.start.y) < PIXEL_BUFFER) {
+						if( Math.abs(correctedMousePosition.y - bb.start.y) < PIXEL_BUFFER) {
 							canvas.style.cursor="row-resize";	
 							resizeMode = resizeModeEnum.n;
-						} else if( Math.abs(currentMousePosition.y - bb.end.y) < PIXEL_BUFFER ) {
+						} else if( Math.abs(correctedMousePosition.y - bb.end.y) < PIXEL_BUFFER ) {
 							canvas.style.cursor="row-resize";	
 							resizeMode = resizeModeEnum.s;
 						} else {
 							canvas.style.cursor="";
 							resizeMode = resizeModeEnum.none;
 						}
-					} else if ( (Math.abs(currentMousePosition.x-bb.start.x) < PIXEL_BUFFER && Math.abs(currentMousePosition.y-bb.start.y) < PIXEL_BUFFER ) ){
+					} else if ( (Math.abs(correctedMousePosition.x-bb.start.x) < PIXEL_BUFFER && Math.abs(correctedMousePosition.y-bb.start.y) < PIXEL_BUFFER ) ){
 						canvas.style.cursor="nwse-resize";
 						resizeMode = resizeModeEnum.nw;
-					} else if( (Math.abs(currentMousePosition.x-bb.end.x) < PIXEL_BUFFER && Math.abs(currentMousePosition.y-bb.end.y) < PIXEL_BUFFER )) {
+					} else if( (Math.abs(correctedMousePosition.x-bb.end.x) < PIXEL_BUFFER && Math.abs(correctedMousePosition.y-bb.end.y) < PIXEL_BUFFER )) {
 						// do a north-west to south-east resize
 						canvas.style.cursor="nwse-resize";
 						resizeMode = resizeModeEnum.se;
-					} else if ( (Math.abs(currentMousePosition.x-bb.start.x) < PIXEL_BUFFER && Math.abs(currentMousePosition.y-bb.end.y) < PIXEL_BUFFER ) ) {
+					} else if ( (Math.abs(correctedMousePosition.x-bb.start.x) < PIXEL_BUFFER && Math.abs(correctedMousePosition.y-bb.end.y) < PIXEL_BUFFER ) ) {
 						resizeMode = resizeModeEnum.sw;
 						canvas.style.cursor="nesw-resize";						
-					} else if( (Math.abs(currentMousePosition.x-bb.end.x) < PIXEL_BUFFER && Math.abs(currentMousePosition.y-bb.start.y) < PIXEL_BUFFER )) {
+					} else if( (Math.abs(correctedMousePosition.x-bb.end.x) < PIXEL_BUFFER && Math.abs(correctedMousePosition.y-bb.start.y) < PIXEL_BUFFER )) {
 						// do a north-east to south-west resize
 						resizeMode = resizeModeEnum.ne;
 						canvas.style.cursor="nesw-resize";
