@@ -11,8 +11,6 @@
         select {
             vertical-align: top;
         }
-
-        imd
     </style>
 </head>
 
@@ -37,7 +35,8 @@
     <b>(Lat/Lon): </b> <span id="panoLatLon"></span>
     <b>Description: </b><span id=panoDescription></span>
     <b>Region: </b><span id="panoRegion"></span><br />
-    <input type="checkbox" id="panoNoInvasives" onchange="unsavedChanges=true;"/> Check this box if you are not able to identify any Phragmites, Japanese Knotweed, wild parsnip or purple loosestrife in this image.
+    <input type="checkbox" id="panoNoInvasives" onchange="unsavedChanges=true;"/> Check this box if you are not able to identify any Phragmites, Japanese Knotweed, wild parsnip or purple loosestrife in this image.<br />
+    <span id="candidateBoxesLink"></span>
 </div>
 
 <div>
@@ -130,7 +129,7 @@
         panoObj.boundingBoxes.forEach(function (bb) {
             var start = {x: bb.topLeftX, y: bb.topLeftY};
             var end = {x: bb.bottomRightX, y: bb.bottomRightY};
-            addBoundingBox(start, end, bb.speciesId, true);
+            addBoundingBox(bb.boxId, start, end, bb.speciesId, true);
         });
     	if( imgLoaded ) {
             render();
@@ -138,6 +137,18 @@
         // the addboundingbox method sets unsavedChanges to true
         // we don't want it to be true yet
         unsavedChanges = false;
+
+      // check for anchor in url
+      var bbAnchor = location.hash;
+      if( bbAnchor != "" ) {
+        boundingBoxes.forEach( function(bb, index) {
+          if(bb.boxId == bbAnchor.substring(1)) {
+            selectedBBIndex=index;
+            panToBoundingBox(bb);
+          }
+        });
+      }
+
     };
     
     heatmap.onload = function() {
@@ -178,6 +189,9 @@
             });
             lastSpecies = panoObj.imapSpeciesId;
             document.getElementById("panoNoInvasives").checked = (panoObj.noInvasives==1);
+            if( panoObj.candidateBoxes.length > 0 ) {
+            	document.getElementById("candidateBoxesLink").innerHTML='<a target="_blank" href="viewPanoramaCandidates.html?panoramaId='+panoObj.panoramaId+'">View candidates</a>';
+            }
             updateDisplay();
         }
     };
@@ -195,8 +209,7 @@
     });
 
 
-
-    canvas.onmousedown = function (e) { //todo: needs to be modified
+    canvas.onmousedown = function (e) { 
         'use strict';
         // get mouse position within canvas
         // e.pageX and e.pageY are mouse coordinates within the entire window
@@ -345,7 +358,7 @@
             	if (isResizing) {
             		isResizing = false;
             		var bb = boundingBoxes[selectedBBIndex];
-            		updateBoundingBox(bb.start, bb.end, selectedBBIndex);
+            		updateBoundingBox(bb.boxId, bb.start, bb.end, selectedBBIndex);
             	}
             	
                 break;
@@ -364,7 +377,7 @@
             case modesEnum.BoundingBox:
               bbEnd = {x: currentMousePosition.x - panoOffset.x,
             		y: currentMousePosition.y - panoOffset.y};
-              if (addBoundingBox(bbStart, bbEnd, lastSpecies)) {
+              if (addBoundingBox(-1,bbStart, bbEnd, lastSpecies)) {
                   defaultMode();
               }
               break;
@@ -528,7 +541,18 @@
         lastSpecies = newSpeciesValue;
     }
 
-    function addBoundingBox(bbStart, bbEnd, speciesId, ignoreMinimumSize=false) {
+    function panToBoundingBox(bb) {
+      var bbMidX = bb.start.x+(bb.end.x-bb.start.x)/2;
+      var bbMidY = bb.start.y+(bb.end.y-bb.start.y)/2;
+
+      panoOffset.x = -(bbMidX - canvas.width/2);
+      panoOffset.y = -(bbMidY - canvas.height/2);
+      lastPanoOffset.x = panoOffset.x;
+      lastPanoOffset.y = panoOffset.y;
+      updateDisplay();
+    }
+
+    function addBoundingBox(dbBoxId, bbStart, bbEnd, speciesId, ignoreMinimumSize=false) {
         var bbid = nextBoundingBoxIndex;
         nextBoundingBoxIndex++;
         // in case bounding box was not drawn from top left to bottom right
@@ -537,12 +561,12 @@
         var startY = Math.min(bbStart.y, bbEnd.y);
         var endY = Math.max(bbStart.y, bbEnd.y);
 
-        var minimumSize = 70;
+        var minimumSize = 25;
 
         var isLargeEnough = (ignoreMinimumSize) || (endX - startX > minimumSize && endY - startY > minimumSize);
 
         if (isLargeEnough) { // ensure that bounding boxes with length or width 0 don't get added
-            var newbb = {index: bbid, start: {x: startX, y: startY}, end: {x: endX, y: endY}};
+            var newbb = {boxId: dbBoxId, index: bbid, start: {x: startX, y: startY}, end: {x: endX, y: endY}};
 
             // add bounding box to page
             var bbdiv = document.getElementById("divBoundingBoxes");
@@ -552,9 +576,20 @@
             newdiv.style.border="solid";
             newdiv.style.borderColor="gray";
             newdiv.style.padding="5px";
+            
+            // add boxId from db 
+            var dbBoxIdInput = document.createElement("input");
+            dbBoxIdInput.type="hidden";
+            dbBoxIdInput.value=dbBoxId;
+            newdiv.appendChild(dbBoxIdInput);
 
             // display bounding box image
             var newimg = document.createElement("canvas");
+            newimg.onclick=function(){
+              selectedBBIndex=bbid;
+              panToBoundingBox(newbb);
+            };
+
             newimg.id = "bbImage"+bbid;
             newimg.width = endX - startX;
             newimg.height = endY - startY;
@@ -656,7 +691,7 @@
         return isLargeEnough;
     }
 
-    function updateBoundingBox(bbNewStart, bbNewEnd, bbIndex) { //todo: call this to update bounding box
+    function updateBoundingBox(dbBoxId, bbNewStart, bbNewEnd, bbIndex) { //todo: call this to update bounding box
         //in case bounding box was not drawn from top left to bottom right
         var startX = Math.min(bbNewStart.x, bbNewEnd.x);
         var endX = Math.max(bbNewStart.x, bbNewEnd.x);
@@ -665,7 +700,7 @@
         
         var bbid = boundingBoxes[bbIndex].index;
 
-        boundingBoxes[bbIndex] = {index: bbid, start: {x: startX, y: startY}, end: {x: endX, y: endY}};
+        boundingBoxes[bbIndex] = {boxId: dbBoxId, index: bbid, start: {x: startX, y: startY}, end: {x: endX, y: endY}};
 
         var newimg = document.getElementById("bbImage"+bbid);
         var newctx = newimg.getContext('2d');
@@ -705,7 +740,7 @@
         		, noInvasives: document.getElementById("panoNoInvasives").checked};
         boundingBoxes.forEach(function (bb, index) {
             var newbb = {
-                topLeftX: bb.start.x, topLeftY: bb.start.y,
+                boxId: bb.boxId, topLeftX: bb.start.x, topLeftY: bb.start.y,
                 bottomRightX: bb.end.x, bottomRightY: bb.end.y
             };
             newbb.speciesId = document.getElementById("bbSpecies" + bb.index).value;

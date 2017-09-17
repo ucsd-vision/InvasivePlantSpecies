@@ -1,0 +1,184 @@
+<html>
+<head>
+<title>Invasive species annotation tool</title>
+</head>
+<link rel="stylesheet"
+	href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+	integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+	crossorigin="anonymous">
+
+    <style>
+        div {
+            margin: 5px;
+        }
+        select {
+            vertical-align: top;
+        }
+    </style>
+
+<body>
+
+<div>
+    <h3>Panorama Details</h3>
+    <b>Panorama Id: </b> <span id="panoId"></span>
+    <b>Species from iMAP: </b> <span id="panoImapSpecies"></span>
+    <b>Google Image Date: </b> <span id="panoImageDate"></span><br />
+    <b>(Lat/Lon): </b> <span id="panoLatLon"></span>
+    <b>Description: </b><span id=panoDescription></span>
+    <b>Region: </b><span id="panoRegion"></span><br />
+</div>
+
+
+	<div id="boundingboxes"></div>
+
+	<script type="text/javascript">
+	    // parse querystring
+	    var urlParams;
+	    (window.onpopstate = function () {
+	        var match,
+	            pl = /\+/g,  // Regex for replacing addition symbol with a space
+	            search = /([^&=]+)=?([^&]*)/g,
+	            decode = function (s) {
+	                return decodeURIComponent(s.replace(pl, " "));
+	            },
+	            query = window.location.search.substring(1);
+	
+	        urlParams = {};
+	        while (match = search.exec(query))
+	            urlParams[decode(match[1])] = decode(match[2]);
+	    })();
+	    
+	    
+	    var xobjSpecies = new XMLHttpRequest();
+	    xobjSpecies.open('GET', '/getAllSpecies', false); //synchronous call
+	    xobjSpecies.send();
+	    speciesJson = JSON.parse(xobjSpecies.responseText);
+	
+	    var speciesIdMap = {};
+	
+	    speciesJson.forEach(function (species) {
+	        speciesIdMap[species.speciesId] = species.description;
+	    });
+	    
+	    var panoramaId = urlParams.panoramaId;
+        // ajax call to get pano information
+        var xobj = new XMLHttpRequest();
+        xobj.overrideMimeType("application/json");
+        xobj.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                panoObj = JSON.parse(this.responseText);
+                document.getElementById("panoId").value = panoObj.panoramaId;
+                document.getElementById("panoLatLon").innerHTML = "(" + panoObj.lat + ","+panoObj.lng+")";
+                document.getElementById("panoDescription").innerHTML = panoObj.description;
+                document.getElementById("panoRegion").innerHTML = panoObj.region;
+                document.getElementById("panoImageDate").innerHTML = panoObj.gsvImageDate;
+                speciesJson.forEach(function (species) {
+                	if( species.speciesId == panoObj.imapSpeciesId ) {
+                        document.getElementById("panoImapSpecies").innerHTML = species.description;
+                	}
+                });
+                lastSpecies = panoObj.imapSpeciesId;
+				var img = new Image();
+				img.onload = function() {
+					panoObj.candidateBoxes.forEach( function(bb) {
+						var boxId = bb.boxId;
+						var startX = bb.topLeftX*4;
+						var startY = bb.topLeftY*4;
+						var endX = bb.bottomRightX*4;
+						var endY = bb.bottomRightY*4;
+						// display bounding box image
+						var newimg = document
+								.createElement("canvas");
+						newimg.width = endX - startX;
+						newimg.height = endY - startY;
+						var newctx = newimg.getContext('2d');
+						newctx.drawImage(img, startX, // where to start clipping
+						startY, // where to start clipping
+						endX - startX, // width
+						endY - startY, // height
+						0, // where to place image on canvas
+						0, // where to place image on canvas
+						endX - startX, // width
+						endY - startY); // height
+						var div = document.createElement("div");
+						div.id = "bb"+boxId;
+			            div.style.border="solid";
+			            div.style.borderColor="gray";
+			            div.style.padding="5px";
+			            div.style.margin ="5px";
+
+						div.appendChild(newimg);
+						div.appendChild(document.createElement("br"));
+			            
+			            var spanLabel = document.createElement("span");
+			            spanLabel.innerHTML = "Candidate label: " +speciesIdMap[bb.speciesId] +" ";
+			            spanLabel.style.verticalAlign="top";
+						div.appendChild(spanLabel);
+						
+						var confirmButton = document.createElement("input");
+						confirmButton.id = "confirmBtn"+boxId;
+						confirmButton.type="button";
+						confirmButton.value="Confirm";
+						confirmButton.style.verticalAlign="top";
+						confirmButton.onclick = function() {
+							document.getElementById("confirmBtn"+boxId).disabled=true;
+							document.getElementById("rejectBtn"+boxId).disabled=true;
+							var xobjConfirm = new XMLHttpRequest();
+							xobjConfirm.onreadystatechange = function() {
+								if( this.readyState == 4 && this.status == 200 ) {
+									document.getElementById("bb"+boxId).append(" Confirmed");
+									confirmButton.disabled=true;
+									document.getElementById("rejectBtn"+boxId).disabled=true;
+								}
+							}
+							xobjConfirm.open("post", "/confirmCandidate", true);
+							xobjConfirm.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+							xobjConfirm.send("boxId="+boxId);
+						}
+						div.appendChild(confirmButton);
+						
+						var rejectButton = document.createElement("input");
+						rejectButton.id = "rejectBtn"+boxId;
+						rejectButton.type="button";
+						rejectButton.value="Reject";
+						rejectButton.style.verticalAlign="top";
+						rejectButton.onclick = function() {
+							document.getElementById("confirmBtn"+boxId).disabled=true;
+							document.getElementById("rejectBtn"+boxId).disabled=true;
+							var xobjReject = new XMLHttpRequest();
+							xobjReject.onreadystatechange = function() {
+								if( this.readyState == 4 && this.status == 200 ) {
+									document.getElementById("bb"+boxId).append(" Rejected");
+									rejectButton.disabled=true;
+									document.getElementById("confirmBtn"+boxId).disabled=true;
+								}
+							}
+							xobjReject.open("post", "/rejectCandidate", true);
+							xobjReject.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+							xobjReject.send("boxId="+boxId);
+						}
+						div.appendChild(rejectButton);
+						
+						div.appendChild(document.createElement("br"));
+						var editPanoLink = document.createElement('a');
+						editPanoLink.href="editPanorama.html?panoramaId="+panoObj.panoramaId+"#"+boxId;
+						editPanoLink.target="_blank";
+						editPanoLink.innerHTML="View panorama";
+						div.appendChild(editPanoLink);
+						
+						document.getElementById("boundingboxes")
+								.appendChild(div);
+					});
+				};
+				img.src = "pano_images/z5/" + panoObj['panoramaId']
+				+ '_z5.jpg';				
+            }
+        };
+        xobj.open('GET', '/getPano?panoramaId=' + urlParams.panoramaId, true);
+        xobj.send();
+        
+        
+	</script>
+
+</body>
+</html>

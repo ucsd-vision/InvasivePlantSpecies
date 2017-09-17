@@ -84,4 +84,12 @@
 			</plugin>
 		</plugins>
 	</build>
+        <profiles>
+          <profile>
+            <id>staging</id>
+            <build>
+              <directory>target_staging</directory>
+            </build>
+          </profile>
+        </profiles>
 </project>

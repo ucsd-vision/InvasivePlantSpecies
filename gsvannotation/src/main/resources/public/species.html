@@ -13,13 +13,6 @@
 
     <script type="text/javascript">
 
-        var jsonList;
-        var xobj2 = new XMLHttpRequest();
-        xobj2.overrideMimeType("application/json");
-        xobj2.open('GET', '/getNumberOfBoundingBoxesPerSpecies', false);
-        xobj2.send();
-
-        jsonList = JSON.parse(xobj2.responseText);
         var xobj = new XMLHttpRequest();
         xobj.overrideMimeType("application/json");
         xobj.onreadystatechange = function () {
@@ -28,7 +21,10 @@
                 jsonSpecies.forEach(function (species) {
                     var newrow = document.createElement("tr")
                     newrow.innerHTML = "<td>" + species.description
-                        + "</td><td>"+ jsonList[species.speciesId]+"</td>"
+                        + "</td><td>"+ species.groundTruthBoxes +"</td>"
+                        + "</td><td>"+ species.candidateBoxes +"</td>"
+                        + "</td><td>"+ species.confirmedBoxes +"</td>"
+                        + "</td><td>"+ species.rejectedBoxes +"</td>"
                         + "<td><a href='editSpecies.html?speciesId="
                         + species.speciesId + "'>edit</a></td>";
 
@@ -37,7 +33,7 @@
 
             }
         };
-        xobj.open('GET', '/getAllSpecies', true);
+        xobj.open('GET', '/getAllSpecies?t='+Math.random(), true);
         xobj.send();
     </script>
 
@@ -45,7 +41,11 @@
     <table id="bbtable" border="1" cellspacing=0 cellpadding=0>
         <tr>
             <th>Species</th>
-            <th>Bounding Boxes of Species</th>
+            <th>Ground truth boxes</th>
+            <th>Candidate boxes</th>
+            <th>Confirmed boxes</th>
+            <th>Rejected boxes</th>
+        </tr>
             <tbody>
             </tbody>
     </table>
