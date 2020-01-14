@@ -1,58 +1,79 @@
 <html>
 <head>
     <title>All Species</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
-          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 </head>
 
 
 <body>
 <a href="index.html">Back to index</a>
 <div>
-
-
-    <script type="text/javascript">
-
-        var xobj = new XMLHttpRequest();
-        xobj.overrideMimeType("application/json");
-        xobj.onreadystatechange = function () {
-            if (this.readyState == 4 && this.status == 200) {
-                jsonSpecies = JSON.parse(this.responseText);
-                jsonSpecies.forEach(function (species) {
-                    var newrow = document.createElement("tr")
-                    newrow.innerHTML = "<td>" + species.description
-                        + "</td><td>"+ species.groundTruthBoxes +"</td>"
-                        + "</td><td>"+ species.candidateBoxes +"</td>"
-                        + "</td><td>"+ species.confirmedBoxes +"</td>"
-                        + "</td><td>"+ species.rejectedBoxes +"</td>"
-                        + "<td><a href='editSpecies.html?speciesId="
-                        + species.speciesId + "'>edit</a></td>";
-
-                    document.getElementById("bbtable").appendChild(newrow);
-                });
-
-            }
-        };
-        xobj.open('GET', '/getAllSpecies?t='+Math.random(), true);
-        xobj.send();
-    </script>
-
-
+	Filter by Dataset: <select id="datasetFilter"></select>
+	
     <table id="bbtable" border="1" cellspacing=0 cellpadding=0>
-        <tr>
-            <th>Species</th>
-            <th>Ground truth boxes</th>
-            <th>Candidate boxes</th>
-            <th>Confirmed boxes</th>
-            <th>Rejected boxes</th>
-        </tr>
+		<thead>
+	        <tr>
+	            <th>Species</th>
+	            <th>Ground truth boxes</th>
+	            <th>Candidate boxes</th>
+	            <th>Confirmed boxes</th>
+	            <th>Rejected boxes</th>
+	        </tr>
+        </thead>
             <tbody>
             </tbody>
     </table>
     <br/>
     <a href="editSpecies.html">Add a new species</a>
-
 </div>
+<script type="text/javascript">
+
+function displaySpecies() {
+	document.getElementById("bbtable").tBodies[0].innerHTML="";
+	var xobj = new XMLHttpRequest();
+	xobj.overrideMimeType("application/json");
+	xobj.onreadystatechange = function () {
+	    if (this.readyState == 4 && this.status == 200) {
+	        jsonSpecies = JSON.parse(this.responseText);
+	        jsonSpecies.forEach(function (species) {
+	            var newrow = document.createElement("tr")
+	            newrow.innerHTML = "<td>" + species.description
+	                + "</td><td>"+ species.groundTruthBoxes +"</td>"
+	                + "</td><td>"+ species.candidateBoxes +"</td>"
+	                + "</td><td>"+ species.confirmedBoxes +"</td>"
+	                + "</td><td>"+ species.rejectedBoxes +"</td>"
+	                + "<td><a href='editSpecies.html?speciesId="
+	                + species.speciesId + "'>edit</a></td>";
+	
+	            document.getElementById("bbtable").tBodies[0].appendChild(newrow);
+	        });
+	
+	    }
+	};
+	xobj.open('GET', '/getAllSpecies?datasetId='+datasetId+'&t='+Math.random(), true);
+	xobj.send();
+	
+}
+
+var datasetId=1;
+var datasetDropdown = document.getElementById("datasetFilter");
+var xobjDataset = new XMLHttpRequest();
+xobjDataset.open('GET', '/getAllDatasets', false); //synchronous call
+xobjDataset.send();
+var datasetJson = JSON.parse(xobjDataset.responseText);
+datasetJson.forEach(function (dataset) {
+    var opt = document.createElement("option");
+    opt.value = dataset.datasetId;
+    opt.text = dataset.description;
+    datasetDropdown.options.add(opt);
+});
+
+var datasetDropdown = document.getElementById("datasetFilter");
+datasetDropdown.onchange = function (e) {
+    datasetId = datasetDropdown.value;
+    displaySpecies();
+};
+displaySpecies();
+</script>
 </body>
 
 </html>

@@ -1,11 +1,44 @@
 <html>
 <head>
     <title>Invasive species annotation tool</title>
+    <style>
+		section {
+		  position: relative;
+		  background:white;
+		  padding-top: 30px;
+                  border:1px solid gray;
+		}
+      .container {
+        overflow-y:auto;
+        height:100%
+      }
+
+		th {
+		  height:0;
+		  line-height:0;
+		  padding-top: 0;
+		  padding-bottom: 0;
+		  border: none;
+		  white-space: nowrap;
+		}
+      .headerDiv {
+        position: absolute;
+        padding: 9px;
+        top: 0;
+        line-height: normal;
+        border-left:1px solid gray;
+      }
+
+      .headerSpan {
+        padding: 9px 25px;
+        color: transparent;
+      }
+      table {
+        border:none;
+        width:100%;
+      }
+    </style>
 </head>
-<!--
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
-      integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
--->
 
 <body>
 <a href="index.html">Back to index</a>
@@ -20,43 +53,39 @@
                                                                                                           onclick="latlng2pano()"/><span
         id="latlngStatus"></span>
 </div>
-<div>
-    <h2>Existing panos</h2>
-    Filters:  Species from iMap:
-    <select id="speciesFilter">
-        <option value="-1">All</option>
-    </select>
-    &nbsp; 
-    Dataset: <select id="datasetFilter"></select>
-    &nbsp; Only panoramas with candidates <input type="checkbox" id="chkWithCandidatesOnly" onclick="chkWithCandidatesOnly_onclick()" />
-    <input type="button" value="Apply" onclick="displayPanos()" />
-
-    <table id="bbtable" border="1" cellspacing=0 cellpadding=0>
-        <thead>
-        <tr>
-            <th>Pano Id</th>
-            <th>Species from iMap</th>
-            <th>Image date</th>
-            <th>Description</th>
-            <th>Region</th>
-            <th>Bounding Boxes</th>
-            <th>Candidate Boxes</th>
-            <th></th>
-        </tr>
-        </thead>
-        <tbody>
-        </tbody>
-    </table>
-
+<h2>Existing panos</h2>
+Filter by Species from iMap:
+<select id="speciesFilter">
+    <option value="-1">All</option>
+</select>
+<section>
+<div class="container">
+	<table id="bbtable" border="none" cellspacing=0 cellpadding=0>
+	    <thead>
+	    <tr>
+	        <th><span class="headerSpan">Panorama Id</span><div class="headerDiv">Panorama Id</div></th>
+	        <th><span class="headerSpan">Species from iMap</span><div class="headerDiv">Species from iMap</div></th>
+	        <th><span class="headerSpan">Image date</span><div class="headerDiv">Image date</div></th>
+	        <th><span class="headerSpan">Description</span><div class="headerDiv">Description</div></th>
+	        <th><span class="headerSpan">Region</span><div class="headerDiv">Region</div></th>
+	        <th><span class="headerSpan">Bounding Boxes</span><div class="headerDiv">Bounding Boxes</div></th>
+	        <th><span class="headerSpan">Candidate Boxes</span><div class="headerDiv">Candidate Boxes</div></th>
+	        <th><div class="headerDiv" style="color:transparent">hi</div></th>
+	    </tr>
+	    </thead>
+	    <tbody>
+	    </tbody>
+	</table>
 </div>
+</section>
 </body>
 <script type="text/javascript">
 
     var speciesToDisplay = -1;
     var xobjSpecies = new XMLHttpRequest();
-    xobjSpecies.open('GET', '/getAllSpecies?datasetId=1', false); //synchronous call
+    xobjSpecies.open('GET', '/getAllSpecies', false); //synchronous call
     xobjSpecies.send();
-    var speciesJson = JSON.parse(xobjSpecies.responseText);
+    speciesJson = JSON.parse(xobjSpecies.responseText);
 
     var speciesIdMap = {};
 
@@ -65,11 +94,11 @@
     });
 
     var speciesDropdown = document.getElementById("speciesFilter");
-    //speciesDropdown.onchange = function (e) {
-    //    speciesToDisplay = speciesDropdown.value;
-    //    clearPanos();
-    //    displayPanos();
-    //};
+    speciesDropdown.onchange = function (e) {
+        speciesToDisplay = speciesDropdown.value;
+        clearPanos();
+        displayPanos();
+    };
     speciesJson.forEach(function (species) {
         var opt = document.createElement("option");
         opt.value = species.speciesId;
@@ -77,27 +106,7 @@
         speciesDropdown.options.add(opt);
     });
 
-    var datasetId=1;
-    var datasetDropdown = document.getElementById("datasetFilter");
-    var xobjDataset = new XMLHttpRequest();
-    xobjDataset.open('GET', '/getAllDatasets', false); //synchronous call
-    xobjDataset.send();
-    var datasetJson = JSON.parse(xobjDataset.responseText);
-    datasetJson.forEach(function (dataset) {
-        var opt = document.createElement("option");
-        opt.value = dataset.datasetId;
-        opt.text = dataset.description;
-        datasetDropdown.options.add(opt);
-    });
-
-
-    var datasetDropdown = document.getElementById("datasetFilter");
-    //datasetDropdown.onchange = function (e) {
-    //    datasetId = datasetDropdown.value;
-    //    clearPanos();
-    //    displayPanos();
-    //};
-
+    displayPanos();
 
 
     function latlng2pano() {
@@ -123,6 +132,7 @@
         xobj.send();
     }
     
+    var lastPanoramaIdEdit;
     
     function getPanoramaRowHtml(panoObj) {
         var boxes = panoObj.boundingBoxes;
@@ -154,11 +164,11 @@
         "<td>" + panoObj.region + "</td>" +
         "<td>" + boundingBoxString + "</td>";
         if( numCandidates > 0 ) {
-          panoRowHtml += "<td><a target='_blank' href='viewPanoramaCandidates.html?panoramaId="+panoObj.panoramaId+"'>" + numCandidates +"</a></td>"
+          panoRowHtml += "<td><a target='_blank' onclick='lastPanoramaIdEdit=\""+panoObj.panoramaId+"\"; return true;' href='viewPanoramaCandidates.html?panoramaId="+panoObj.panoramaId+"'>" + numCandidates +"</a></td>"
         } else {
           panoRowHtml += "<td>0</td>";
         }
-        panoRowHtml+= "<td><a target='_blank' href='editPanorama.html?panoramaId=" + panoObj.panoramaId + "'>edit</a></td>";
+        panoRowHtml+= "<td><a target='_blank' onclick='lastPanoramaIdEdit=\""+panoObj.panoramaId+"\"; return true;' href='editPanorama.html?panoramaId=" + panoObj.panoramaId + "'>edit</a></td>";
         
         return panoRowHtml;
     }
@@ -172,14 +182,8 @@
                     var panoObj = JSON.parse(this.responseText);
                     var trPano = document.getElementById("pano_tr_"+panoramaId);
                     trPano.innerHTML = getPanoramaRowHtml(panoObj);
-                    var numCandidates = 0;
-                    if( panoObj.candidateBoxes != null ) {
-                      numCandidates = panoObj.candidateBoxes.length;
-                    }
                     if( panoObj.noInvasives == true ) {
                     	trPano.bgColor="#F6DDCC";
-                    } else if( numCandidates > 0 ) {
-                      trPano.bgColor="#E6BFFA";
                     } else if( panoObj.boundingBoxes.length > 0 ) {
                     	trPano.bgColor="#D6EAF8";
                     } else { 
@@ -193,33 +197,20 @@
     }
     
     function displayPanos() {
-        clearPanos();
-        speciesToDisplay = speciesDropdown.value;
-        datasetId = datasetDropdown.value;
-        var withCandidatesOnly = false;
-        if(document.getElementById("chkWithCandidatesOnly").checked) {
-          withCandidatesOnly=true;
-        }
 
         var xobj = new XMLHttpRequest();
         xobj.overrideMimeType("application/json");
-        xobj.open('GET', '/getPanos?speciesId='+speciesToDisplay+"&datasetId="+datasetId+"&withCandidates="+withCandidatesOnly+"&t="+Math.random(), false);
+        xobj.open('GET', '/getPanosByIMapSpeciesId?speciesId='+speciesToDisplay, false);
         xobj.send();
         jsonPanos = JSON.parse(xobj.responseText);
 
 
-        jsonPanos.forEach(function (pano) {
+        jsonPanos.forEach(function (pano, index) {
             if ( speciesToDisplay == -1 || pano.imapSpeciesId == speciesToDisplay ) {
                 var newrow = document.createElement("tr");
                 newrow.id="pano_tr_"+pano.panoramaId;
-                var numCandidates = 0;
-                if( pano.candidateBoxes != null ) {
-                  numCandidates = pano.candidateBoxes.length;
-                }
                 if( pano.noInvasives == true ) {
                 	newrow.bgColor="#F6DDCC";
-                } else if( numCandidates > 0 ) {
-                  newrow.bgColor = "#E6BFFA";
                 } else if( pano.boundingBoxes.length > 0 ) {
                 	newrow.bgColor="#D6EAF8";
                 }
@@ -250,9 +241,6 @@
         });
 
         return hasFilterSpecies;
-    }
-
-    function chkWithCandidatesOnly_onclick() {
     }
 </script>
 </html>

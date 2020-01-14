@@ -16,7 +16,7 @@ public class Main {
 
 	public static Panorama latlng2pano(double lat, double lng) {
 		try {
-			Process p = Runtime.getRuntime().exec("python src/main/python/latlng2pano.py " + lat + " " + lng);
+			Process p = Runtime.getRuntime().exec("/usr/bin/python2 src/main/python/latlng2pano.py " + lat + " " + lng);
 			p.waitFor();
 
 			BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -39,11 +39,10 @@ public class Main {
 
 	public static Panorama panoId2pano(String panoId) {
 		try {
-			Process p = Runtime.getRuntime().exec("python src/main/python/panoId2pano.py " + panoId);
+			Process p = Runtime.getRuntime().exec("/usr/bin/python2 src/main/python/panoId2pano.py " + panoId);
 			p.waitFor();
 
 			BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
-
 			// for converting POJOs to json
 			ObjectMapper jsonMapper = new ObjectMapper();
 			jsonMapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd"));
@@ -51,7 +50,7 @@ public class Main {
 			if (json.contains("none")) {
 				return null;
 			} else {
-				Panorama pano = jsonMapper.readValue(json, Panorama.class);
+                                Panorama pano = jsonMapper.readValue(json, Panorama.class);
 				return pano;
 			}
 		} catch (Exception e) {
@@ -82,6 +81,7 @@ public class Main {
 		Map<String, String> columnMaps = new HashMap<String, String>();
 		columnMaps.put("imap_species_speciesId", "imapSpeciesId");
 		columnMaps.put("species_speciesId", "speciesId");
+		columnMaps.put("dataset_datasetId",  "datasetId");
 		sql2o.setDefaultColumnMappings(columnMaps);
 
 		Model model = new Sql2oModel(sql2o);
@@ -108,7 +108,7 @@ public class Main {
 
 			File panoImage = new File("external/pano_images/" + panoramaId + "_z3.jpg");
 			if (!panoImage.exists()) {
-				Process p = Runtime.getRuntime().exec("python src/main/python/getPanoImage.py " + pano.getPanoramaId());
+				Process p = Runtime.getRuntime().exec("/usr/bin/python2 src/main/python/getPanoImage.py " + pano.getPanoramaId());
 				p.waitFor();
 			}
 			String panoJson = jsonMapper.writeValueAsString(pano);
@@ -119,7 +119,7 @@ public class Main {
 			String idString = request.queryParams("speciesId");
 			int id = Integer.parseInt(idString);
 
-			List<Species> species = model.getAllSpecies();
+			List<Species> species = model.getAllSpecies(1);
 
 			Species specie = null;
 			for (Species s : species) {
@@ -159,6 +159,12 @@ public class Main {
 			return "ok";
 		});
 
+		post("unsureCandidate", (request, response) -> {
+			String boxId = request.queryParams("boxId");
+			model.unsureCandidate(boxId);
+			return "ok";
+		});
+
 		get("/getAllPanos", (request, response) -> {
 			List<Panorama> panos = model.getAllPanos();
 
@@ -166,7 +172,8 @@ public class Main {
 		});
 
 		get("/getAllSpecies", (request, response) -> {
-			List<Species> species = model.getAllSpecies();
+			int datasetId = Integer.parseInt(request.queryParams("datasetId"));
+			List<Species> species = model.getAllSpecies(datasetId);
 			return jsonMapper.writeValueAsString(species);
 		});
 
@@ -179,6 +186,11 @@ public class Main {
 				} else {
 					pano.setImapSpeciesId(1); // default to phrag
 				}
+                                if( request.queryParams().contains("datasetId")) {
+                                  pano.setDatasetId(Integer.parseInt(request.queryParams("datasetId")));
+                                } else {
+                                  pano.setDatasetId(1);
+                                }
 				// Checks to see if panorama is already in database
 				if (model.getPanorama(pano.getPanoramaId()) == null) {
 					model.insertPanorama(pano);
@@ -196,6 +208,11 @@ public class Main {
 			// Check to see if a panorama exists for this lat/lng
 
 			if (pano != null) {
+				int datasetId=1;
+				if( request.queryMap().hasKey("datasetId") ) {
+					datasetId=Integer.parseInt(request.queryParams("datasetId"));
+				}
+				pano.setDatasetId(datasetId);
 				if (request.queryParams().contains("imapSpeciesId")) {
 					pano.setImapSpeciesId(Integer.parseInt(request.queryParams("imapSpeciesId")));
 				} else {
@@ -204,12 +221,19 @@ public class Main {
 				// Checks to see if panorama is already in database
 				if (model.getPanorama(pano.getPanoramaId()) == null) {
 					model.insertPanorama(pano);
+				} else {
+					model.updatePanorama(pano);
 				}
 				return pano.getPanoramaId();
 			} else {
 				return "none";
 			}
 		});
+
+		get("getAllDatasets", (request, response) -> {
+                  List<Dataset> datasets = model.getAllDatasets();
+                  return jsonMapper.writeValueAsString(datasets);
+                });
 
 		get("getPanosByIMapSpeciesId", (request, response) -> {
 			String idString = request.queryParams("speciesId");
@@ -225,6 +249,14 @@ public class Main {
 
 			return jsonMapper.writeValueAsString(panoramas);
 		});
+		
+		get("getPanos", (request,response) -> {
+				int imapSpeciesId = Integer.parseInt(request.queryParams("speciesId"));
+				int datasetId = Integer.parseInt(request.queryParams("datasetId"));
+                                boolean withCandidates = Boolean.parseBoolean(request.queryParams("withCandidates"));
+				List<Panorama> panoramas = model.getPanos(imapSpeciesId,  datasetId, withCandidates);
+				return jsonMapper.writeValueAsString(panoramas);
+		});
 
 		get("getPanosByBoundingBoxSpeciesId", (request, response) -> {
 			List<Panorama> panoramas;
@@ -239,6 +271,16 @@ public class Main {
 			}
 
 			return jsonMapper.writeValueAsString(panoramas);
+		});
+		
+		get("getConfirmedCandidates", (request, response) -> {
+			String speciesId = request.queryParams("speciesId");
+			int id = Integer.parseInt(speciesId);
+			List<Panorama> confirmedCandidates = null;
+			if (id != -1) {
+				confirmedCandidates = model.getConfirmedCandidateBoxes(id);
+			}
+			return jsonMapper.writeValueAsString(confirmedCandidates);
 		});
 
 		get("getNumberOfBoundingBoxesPerSpecies",

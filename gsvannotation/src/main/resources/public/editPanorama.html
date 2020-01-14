@@ -1,8 +1,6 @@
 <html>
 <head>
     <title>Annotate panorama</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
-          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
     <style>
         div {
             margin: 5px;
@@ -27,6 +25,10 @@
 	<option value="2">Japanese Knotweed</option>
 </select>
 <div id="divStatus">
+</div>
+<div id="divComments">
+<b>Comments:</b><br />
+<textarea id="txtComments" rows=4 cols=128 onchange="unsavedChanges=true;"></textarea>
 </div>
 <div>
     <h3>Panorama Details</h3>
@@ -78,6 +80,10 @@
     })();
 
     // global (page scope) variables
+    var displayCandidates = false;
+    if( urlParams.displayCandidates != undefined && urlParams.displayCandidates=="true") {
+    	displayCandidates = true;
+    }
     var canvas = document.getElementById('canvPano');
     var ctx = canvas.getContext('2d');
     var bbStart = {x: 0, y: 0}; // defines bounding box start position
@@ -131,6 +137,12 @@
             var end = {x: bb.bottomRightX, y: bb.bottomRightY};
             addBoundingBox(bb.boxId, start, end, bb.speciesId, true);
         });
+
+        panoObj.candidateBoxes.forEach(function (cb) {
+          var start = {x:cb.topLeftX, y: cb.topLeftY};
+          var end = {x: cb.bottomRightX, y: cb.bottomRightY};
+          addBoundingBox(cb.boxId, start, end, cb.speciesId, true, true);
+        });
     	if( imgLoaded ) {
             render();
     	}
@@ -166,7 +178,7 @@
     var xobjSpecies = new XMLHttpRequest();
     // this is a synchronous call because we want to ensure it happens before
     // any other AJAX calls that depend on this data
-    xobjSpecies.open('GET', '/getAllSpecies', false); //synchronous call
+    xobjSpecies.open('GET', '/getAllSpecies?datasetId=1', false); //synchronous call
     xobjSpecies.send();
     speciesJson = JSON.parse(xobjSpecies.responseText);
 
@@ -189,8 +201,9 @@
             });
             lastSpecies = panoObj.imapSpeciesId;
             document.getElementById("panoNoInvasives").checked = (panoObj.noInvasives==1);
+            document.getElementById("txtComments").value=panoObj.comments;
             if( panoObj.candidateBoxes.length > 0 ) {
-            	document.getElementById("candidateBoxesLink").innerHTML='<a target="_blank" href="viewPanoramaCandidates.html?panoramaId='+panoObj.panoramaId+'">View candidates</a>';
+              document.getElementById("candidateBoxesLink").innerHTML='<a target="_blank" href="viewPanoramaCandidates.html?panoramaId='+panoObj.panoramaId+'">View candidates</a>';
             }
             updateDisplay();
         }
@@ -272,6 +285,9 @@
         	var PIXEL_BUFFER=3;
 			if( selectedBBIndex != -1) {
 				var bb = boundingBoxes[selectedBBIndex];
+                                if( bb.candidate ) {
+                                  return;
+                                }
 				if(isResizing) {
 					if(resizeMode == resizeModeEnum.w) {
 						bb.start.x = correctedMousePosition.x;
@@ -400,8 +416,15 @@
                 document.getElementById("divStatus").innerHTML = "Add bounding box mode";
                 break;
         }
-
-        document.getElementById("deleteBB").disabled = selectedBBIndex == -1;
+        if( selectedBBIndex==-1) {
+          document.getElementById("deleteBB").disabled=true;
+        } else {
+          if( boundingBoxes[selectedBBIndex].candidate ) {
+            document.getElementById("deleteBB").disabled=true;
+          } else {
+            document.getElementById("deleteBB").disabled=false;
+          }
+        }
 
         render();
     }
@@ -511,6 +534,9 @@
                 style = "#FF0000";
                 width = 5;
             }
+            if( boundingBoxes[i].candidate ) {
+              style = "#FF4500"
+            }
             drawRectangle(boundingBoxes[i].start, boundingBoxes[i].end, style, width);
         }
     }
@@ -520,6 +546,9 @@
         y -= panoOffset.y;
         selectedBBIndex = -1;
         for (var i = 0; i < boundingBoxes.length; ++i) {
+            if( boundingBoxes[i].candidate ) {
+              continue;
+            }
             var bb = boundingBoxes[i];
             if (x >= bb.start.x && x <= bb.end.x && y >= bb.start.y && y <= bb.end.y) {
                 selectedBBIndex = i;
@@ -552,7 +581,7 @@
       updateDisplay();
     }
 
-    function addBoundingBox(dbBoxId, bbStart, bbEnd, speciesId, ignoreMinimumSize=false) {
+    function addBoundingBox(dbBoxId, bbStart, bbEnd, speciesId, ignoreMinimumSize=false, isCandidate=false) {
         var bbid = nextBoundingBoxIndex;
         nextBoundingBoxIndex++;
         // in case bounding box was not drawn from top left to bottom right
@@ -566,7 +595,7 @@
         var isLargeEnough = (ignoreMinimumSize) || (endX - startX > minimumSize && endY - startY > minimumSize);
 
         if (isLargeEnough) { // ensure that bounding boxes with length or width 0 don't get added
-            var newbb = {boxId: dbBoxId, index: bbid, start: {x: startX, y: startY}, end: {x: endX, y: endY}};
+            var newbb = {boxId: dbBoxId, index: bbid, start: {x: startX, y: startY}, end: {x: endX, y: endY}, candidate:isCandidate};
 
             // add bounding box to page
             var bbdiv = document.getElementById("divBoundingBoxes");
@@ -676,7 +705,9 @@
             };
             newdiv.appendChild(deleteButton);
 
-            bbdiv.appendChild(newdiv);
+            if( isCandidate == false ) {
+              bbdiv.appendChild(newdiv);
+            }
             boundingBoxes.push(newbb);
 
             lastSpecies = speciesId;
@@ -735,10 +766,16 @@
             }
 
         }
-        var pano = {panoramaId: urlParams.panoramaId, lat: 0, lng: 0, image: ""
+        var pano = {panoramaId: urlParams.panoramaId
+                        , comments: document.getElementById("txtComments").value
+                        , lat: 0, lng: 0
+                        , image: ""
         		, boundingBoxes: []
         		, noInvasives: document.getElementById("panoNoInvasives").checked};
         boundingBoxes.forEach(function (bb, index) {
+            if( bb.candidate ) {
+              return;
+            }
             var newbb = {
                 boxId: bb.boxId, topLeftX: bb.start.x, topLeftY: bb.start.y,
                 bottomRightX: bb.end.x, bottomRightY: bb.end.y
@@ -852,6 +889,10 @@
     		species.disabled = true;
     	}
     	
+    }
+    
+    function toggleDisplayCandidates() {
+    	displayCandidates = document.getElementById("chkDisplayCandidates").value;
     }
 </script>
 </body>

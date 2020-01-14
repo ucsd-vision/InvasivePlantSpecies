@@ -53,7 +53,7 @@ speciesDropdown.onchange = function( e ) {
             		img.src = "pano_images/"+pano['panoramaId']+'_z3.jpg';
             		img.onload = function() {
                 		pano.boundingBoxes.forEach( function( bb ) {
-                			if( bb.speciesId == speciesId ) {
+                			if( bb.speciesId == speciesId && bb.confirmed ) {
                 				var startX = bb.topLeftX;
                 				var startY = bb.topLeftY;
                 				var endX = bb.bottomRightX;
@@ -72,11 +72,10 @@ speciesDropdown.onchange = function( e ) {
                 		            0, // where to place image on canvas
                 		            endX - startX, // width
                 		            endY - startY); // height
-                                 var link = document.createElement("a")
-                                 link.href = "editPanorama.html?panoramaId="+pano['panoramaId']+"#"+bb.boxId
-                                 link.target="_blank";
-                                 link.appendChild(newimg);
-                		            
+                                        var link = document.createElement("a")
+                                        link.href = "editPanorama.html?panoramaId="+pano['panoramaId']+"#"+bb.boxId
+                                        link.target="_blank";
+                                        link.appendChild(newimg);
                 		        document.getElementById("boundingboxes").appendChild(link);            				
                 			}
                 		});
@@ -84,7 +83,7 @@ speciesDropdown.onchange = function( e ) {
             	});
             }			
 		};
-		xobj.open('GET', '/getPanosByBoundingBoxSpeciesId?speciesId='+speciesId, true);
+		xobj.open('GET', '/getConfirmedCandidates?speciesId='+speciesId, true);
 		xobj.send();
 	}
 }

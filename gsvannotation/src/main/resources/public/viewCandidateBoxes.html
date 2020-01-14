@@ -2,10 +2,6 @@
 <head>
 <title>Invasive species annotation tool</title>
 </head>
-<link rel="stylesheet"
-	href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
-	integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
-	crossorigin="anonymous">
 
     <style>
         div {
@@ -18,19 +14,21 @@
 
 <body>
 	<div>
-		<a href="index.html">Back to index</a>
+		<a href="index.html">Back to index</a> <a href="candidatesInstructions.html" target="_blank">Instructions</a>
 	</div>
 
-	Click the button to get 10 random candidates:
-	<input type="button" value="Get 10 random candidates"
+	Click the button to get 5 random candidates:
+	<input type="button" value="Get 5 random candidates"
 		onclick="getCandidates()" />
 
 
 	<div id="boundingboxes"></div>
 
+	<input type="button" value="Get 5 random candidates"
+		onclick="getCandidates()" />
 	<script type="text/javascript">
 	    var xobjSpecies = new XMLHttpRequest();
-	    xobjSpecies.open('GET', '/getAllSpecies', false); //synchronous call
+	    xobjSpecies.open('GET', '/getAllSpecies?datasetId=1', false); //synchronous call
 	    xobjSpecies.send();
 	    speciesJson = JSON.parse(xobjSpecies.responseText);
 	
@@ -46,29 +44,11 @@
 				if (this.readyState == 4 && this.status == 200) {
 					var panosJson = JSON.parse(this.responseText);
 					panosJson.forEach(function(pano) {
+                                                var bb = pano.boundingBoxes[0];
+                                                var boxId = bb.boxId;
 						var img = new Image();
-						img.src = "pano_images/z5/" + pano['panoramaId']
-								+ '_z5.jpg';
+						img.src = "candidates/" + pano['panoramaId'] + "_"+boxId + '.jpg';
 						img.onload = function() {
-							var bb = pano.boundingBoxes[0];
-							var startX = bb.topLeftX*4;
-							var startY = bb.topLeftY*4;
-							var endX = bb.bottomRightX*4;
-							var endY = bb.bottomRightY*4;
-							// display bounding box image
-							var newimg = document
-									.createElement("canvas");
-							newimg.width = endX - startX;
-							newimg.height = endY - startY;
-							var newctx = newimg.getContext('2d');
-							newctx.drawImage(img, startX, // where to start clipping
-							startY, // where to start clipping
-							endX - startX, // width
-							endY - startY, // height
-							0, // where to place image on canvas
-							0, // where to place image on canvas
-							endX - startX, // width
-							endY - startY); // height
 							var div = document.createElement("div");
 							div.id = "bb"+bb.boxId;
 				            div.style.border="solid";
@@ -76,7 +56,7 @@
 				            div.style.padding="5px";
 				            div.style.margin ="5px";
 
-							div.appendChild(newimg);
+							div.appendChild(img);
 							div.appendChild(document.createElement("br"));
 				            
 				            var spanLabel = document.createElement("span");
@@ -92,6 +72,7 @@
 							confirmButton.onclick = function() {
 								document.getElementById("confirmBtn"+bb.boxId).disabled=true;
 								document.getElementById("rejectBtn"+bb.boxId).disabled=true;
+								document.getElementById("unsureBtn"+bb.boxId).disabled=true;
 								var xobjConfirm = new XMLHttpRequest();
 								xobjConfirm.onreadystatechange = function() {
 									if( this.readyState == 4 && this.status == 200 ) {
@@ -114,6 +95,8 @@
 							rejectButton.onclick = function() {
 								document.getElementById("confirmBtn"+bb.boxId).disabled=true;
 								document.getElementById("rejectBtn"+bb.boxId).disabled=true;
+								document.getElementById("unsureBtn"+bb.boxId).disabled=true;
+
 								var xobjReject = new XMLHttpRequest();
 								xobjReject.onreadystatechange = function() {
 									if( this.readyState == 4 && this.status == 200 ) {
@@ -127,6 +110,28 @@
 								xobjReject.send("boxId="+bb.boxId);
 							}
 							div.appendChild(rejectButton);
+                                                        
+							var unsureButton = document.createElement("input");
+							unsureButton.id = "unsureBtn"+bb.boxId;
+							unsureButton.type="button";
+							unsureButton.value="Unsure";
+							unsureButton.style.verticalAlign="top";
+							unsureButton.onclick = function() {
+								document.getElementById("confirmBtn"+bb.boxId).disabled=true;
+								document.getElementById("rejectBtn"+bb.boxId).disabled=true;
+								var xobjReject = new XMLHttpRequest();
+								xobjReject.onreadystatechange = function() {
+									if( this.readyState == 4 && this.status == 200 ) {
+										document.getElementById("bb"+bb.boxId).append(" Unsure");
+										unsureButton.disabled=true;
+										document.getElementById("confirmBtn"+bb.boxId).disabled=true;
+									}
+								}
+								xobjReject.open("post", "/unsureCandidate", true);
+								xobjReject.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+								xobjReject.send("boxId="+bb.boxId);
+							}
+							div.appendChild(unsureButton);
 							
 							div.appendChild(document.createElement("br"));
 							var editPanoLink = document.createElement('a');

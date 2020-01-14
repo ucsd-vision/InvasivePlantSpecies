@@ -5,6 +5,7 @@ import java.util.List;
 
 public class Panorama {
 	private String panoramaId;
+        private String comments;
 	private double lat;
 	private double lng;
 	private String image;
@@ -17,6 +18,8 @@ public class Panorama {
 	private int imapSpeciesId;
 	private boolean noInvasives; /// a flag indicating no invasive plants found
 									/// in this panorama
+	private int datasetId;
+	
 	private int maxZoomLevel;
 
 	public String getDescription() {
@@ -58,6 +61,14 @@ public class Panorama {
 	public void setPanoramaId(String panoId) {
 		this.panoramaId = panoId;
 	}
+
+        public String getComments() {
+          return comments;
+        }
+
+        public void setComments(String comments) {
+          this.comments = comments;
+        }
 
 	public double getLat() {
 		return lat;
@@ -121,6 +132,14 @@ public class Panorama {
 
 	public void setCandidateBoxes(List<BoundingBox> candidateBoxes) {
 		this.candidateBoxes = candidateBoxes;
+	}
+	
+	public int getDatasetId() {
+		return this.datasetId;
+	}
+	
+	public void setDatasetId(int datasetId) {
+		this.datasetId = datasetId;
 	}
 	
 }

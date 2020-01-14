@@ -44,7 +44,7 @@ Filter by iMap Species:
         jsonPanos = JSON.parse(xobj.responseText);
 
         var xobjSpecies = new XMLHttpRequest();
-        xobjSpecies.open('GET', '/getAllSpecies', false); //synchronous call
+        xobjSpecies.open('GET', '/getAllSpecies?datasetId=1', false); //synchronous call
         xobjSpecies.send();
         speciesJson = JSON.parse(xobjSpecies.responseText);
 

@@ -2,10 +2,6 @@
 <head>
 <title>Invasive species annotation tool</title>
 </head>
-<link rel="stylesheet"
-	href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
-	integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
-	crossorigin="anonymous">
 
     <style>
         div {
@@ -48,9 +44,17 @@
 	            urlParams[decode(match[1])] = decode(match[2]);
 	    })();
 	    
-	    
+	    var xobjDatasets = new XMLHttpRequest();
+            xobjDatasets.open('GET', '/getAllDatasets', false); // synchronous call
+            xobjDatasets.send();
+            var datasetIdMap = {};
+            var datasetsJson = JSON.parse(xobjDatasets.responseText);
+            datasetsJson.forEach(function (dataset) {
+              datasetIdMap[dataset.datasetId] = dataset.subfolder;
+            });
+
 	    var xobjSpecies = new XMLHttpRequest();
-	    xobjSpecies.open('GET', '/getAllSpecies', false); //synchronous call
+	    xobjSpecies.open('GET', '/getAllSpecies?datasetId=1', false); //synchronous call
 	    xobjSpecies.send();
 	    speciesJson = JSON.parse(xobjSpecies.responseText);
 	
@@ -123,12 +127,18 @@
 						confirmButton.onclick = function() {
 							document.getElementById("confirmBtn"+boxId).disabled=true;
 							document.getElementById("rejectBtn"+boxId).disabled=true;
+							document.getElementById("unsureBtn"+boxId).disabled=true;
 							var xobjConfirm = new XMLHttpRequest();
 							xobjConfirm.onreadystatechange = function() {
 								if( this.readyState == 4 && this.status == 200 ) {
 									document.getElementById("bb"+boxId).append(" Confirmed");
 									confirmButton.disabled=true;
 									document.getElementById("rejectBtn"+boxId).disabled=true;
+                                                                        if( window.opener != null ) {
+                                                                          if( window.opener.document.getElementById("bbtable")!=null) {
+                                                                            window.opener.updatePanoramaRow( urlParams.panoramaId );
+                                                                          }
+                                                                        }
 								}
 							}
 							xobjConfirm.open("post", "/confirmCandidate", true);
@@ -145,12 +155,18 @@
 						rejectButton.onclick = function() {
 							document.getElementById("confirmBtn"+boxId).disabled=true;
 							document.getElementById("rejectBtn"+boxId).disabled=true;
+							document.getElementById("unsureBtn"+boxId).disabled=true;
 							var xobjReject = new XMLHttpRequest();
 							xobjReject.onreadystatechange = function() {
 								if( this.readyState == 4 && this.status == 200 ) {
 									document.getElementById("bb"+boxId).append(" Rejected");
 									rejectButton.disabled=true;
 									document.getElementById("confirmBtn"+boxId).disabled=true;
+                                                                        if( window.opener != null ) {
+                                                                          if( window.opener.document.getElementById("bbtable")!=null) {
+                                                                            window.opener.updatePanoramaRow( urlParams.panoramaId );
+                                                                          }
+                                                                        }
 								}
 							}
 							xobjReject.open("post", "/rejectCandidate", true);
@@ -159,6 +175,28 @@
 						}
 						div.appendChild(rejectButton);
 						
+                                                      var unsureButton = document.createElement("input");
+                                                      unsureButton.id = "unsureBtn"+bb.boxId;
+                                                      unsureButton.type="button";
+                                                      unsureButton.value="Unsure";
+                                                      unsureButton.style.verticalAlign="top";
+                                                      unsureButton.onclick = function() {
+                                                              document.getElementById("confirmBtn"+bb.boxId).disabled=true;
+                                                              document.getElementById("rejectBtn"+bb.boxId).disabled=true;
+                                                              var xobjReject = new XMLHttpRequest();
+                                                              xobjReject.onreadystatechange = function() {
+                                                                      if( this.readyState == 4 && this.status == 200 ) {
+                                                                              document.getElementById("bb"+bb.boxId).append(" Unsure");
+                                                                              unsureButton.disabled=true;
+                                                                              document.getElementById("confirmBtn"+bb.boxId).disabled=true;
+                                                                      }
+                                                              }
+                                                              xobjReject.open("post", "/unsureCandidate", true);
+                                                              xobjReject.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                                                              xobjReject.send("boxId="+bb.boxId);
+                                                      }
+                                                      div.appendChild(unsureButton);
+
 						div.appendChild(document.createElement("br"));
 						var editPanoLink = document.createElement('a');
 						editPanoLink.href="editPanorama.html?panoramaId="+panoObj.panoramaId+"#"+boxId;
@@ -170,8 +208,13 @@
 								.appendChild(div);
 					});
 				};
-				img.src = "pano_images/z5/" + panoObj['panoramaId']
-				+ '_z5.jpg';				
+                                var subfolder = datasetIdMap[panoObj['datasetId']];
+                                if( subfolder != null ) {
+                                  img.src = "pano_images/z5/"+subfolder+"/"+panoObj['panoramaId']+"_z5.jpg";
+                                } else {
+				  img.src = "pano_images/z5/" + panoObj['panoramaId']
+				  + '_z5.jpg';
+                                }
             }
         };
         xobj.open('GET', '/getPano?panoramaId=' + urlParams.panoramaId, true);
